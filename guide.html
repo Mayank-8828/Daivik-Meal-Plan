@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daivik's Food Journey · A Little Guide 🌸</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF8F0; --cream-2:#FBEFE0; --peach:#FFD9B8;
+    --coral:#FF8E6E; --berry:#C5384B; --berry-dark:#8E1F30;
+    --olive:#5B6E3D; --olive-light:#A8B97A; --mustard:#E8B339;
+    --ink:#2B1810; --ink-soft:#4A3328;
+    --paper:#FFFCF6; --line:#E8D8C4;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    background:var(--cream); color:var(--ink);
+    line-height:1.65;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(255,217,184,.5), transparent 50%),
+      radial-gradient(circle at 90% 100%, rgba(168,185,122,.25), transparent 50%);
+    background-attachment: fixed;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:680px;margin:0 auto;
+    padding:40px 24px 80px;
+  }
+
+  /* HERO */
+  .hero{
+    background: linear-gradient(155deg, var(--berry) 0%, var(--coral) 70%, var(--peach) 100%);
+    border-radius:32px;padding:38px 30px 34px;color:#fff;
+    box-shadow: 0 20px 50px -20px rgba(197,56,75,.4);
+    position:relative;overflow:hidden;text-align:center;
+    margin-bottom:36px;
+  }
+  .hero::after{
+    content:'';position:absolute;inset:0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.25), transparent 50%);
+    pointer-events:none;
+  }
+  .hero-emoji{font-size:48px;line-height:1;display:block;margin-bottom:12px;position:relative}
+  .hero h1{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    font-size:42px;margin:0;letter-spacing:-.02em;line-height:1.05;
+    position:relative;
+  }
+  .hero .sub{
+    margin-top:10px;font-size:14px;opacity:.95;
+    letter-spacing:.04em;position:relative;
+  }
+  .hero .from{
+    margin-top:18px;font-size:12.5px;font-style:italic;
+    opacity:.92;position:relative;
+  }
+  .hero .from strong{font-weight:700;font-style:normal}
+
+  /* INTRO */
+  .intro{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:20px;padding:22px 24px;margin-bottom:36px;
+    font-size:15px;line-height:1.7;
+  }
+  .intro p{margin:0 0 10px}
+  .intro p:last-child{margin-bottom:0}
+
+  /* SECTION */
+  .section{margin-bottom:44px}
+  .section-num{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'Fraunces';font-style:italic;font-weight:600;
+    color:var(--berry);font-size:13px;letter-spacing:.15em;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .section-num .num{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--berry);color:#fff;
+    display:grid;place-items:center;font-size:14px;
+    font-family:'Fraunces';font-style:italic;font-weight:700;letter-spacing:0;
+  }
+  .section h2{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    font-size:30px;margin:0 0 18px;letter-spacing:-.02em;line-height:1.15;
+  }
+  .section h2 .accent{color:var(--berry)}
+
+  /* STEP CARD */
+  .step-card{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:18px;padding:18px 20px;margin-bottom:12px;
+    display:flex;gap:14px;align-items:flex-start;
+    box-shadow: 0 1px 0 rgba(43,24,16,.04), 0 6px 16px -10px rgba(43,24,16,.15);
+  }
+  .step-icon{
+    flex-shrink:0;width:44px;height:44px;border-radius:14px;
+    background:var(--cream-2);
+    display:grid;place-items:center;font-size:22px;
+  }
+  .step-icon.olive{background:var(--olive);color:#fff}
+  .step-icon.berry{background:var(--berry);color:#fff}
+  .step-icon.mustard{background:var(--mustard);color:var(--ink)}
+  .step-icon.coral{background:var(--coral);color:#fff}
+  .step-body{flex:1;min-width:0}
+  .step-body h3{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    margin:0 0 4px;font-size:18px;letter-spacing:-.01em;
+  }
+  .step-body p{margin:0;font-size:14px;color:var(--ink-soft);line-height:1.55}
+  .step-body p + p{margin-top:6px}
+  .step-body strong{color:var(--ink);font-weight:700}
+  .step-body em{font-style:normal;background:var(--cream-2);padding:1px 7px;border-radius:6px;font-weight:600;color:var(--ink);font-size:13px}
+
+  /* TIPS BANNER */
+  .tip{
+    background: linear-gradient(135deg, var(--cream-2), var(--peach));
+    border-radius:18px;padding:16px 20px;margin:10px 0 14px;
+    border-left:4px solid var(--coral);
+    font-size:14px;line-height:1.55;
+  }
+  .tip strong{font-family:'Fraunces';font-style:italic;font-weight:600;color:var(--berry-dark);display:block;margin-bottom:3px;font-size:14px;letter-spacing:.02em;text-transform:none}
+
+  .warn{
+    background: #FFF4F0;
+    border-left:4px solid var(--berry);
+    border-radius:14px;padding:14px 18px;margin:10px 0;
+    font-size:13.5px;line-height:1.55;color:var(--berry-dark);
+  }
+  .warn strong{display:block;margin-bottom:3px;font-family:'Fraunces';font-style:italic;font-weight:600;font-size:14px}
+
+  /* FEATURES GRID */
+  .features{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  }
+  @media (max-width:480px){.features{grid-template-columns:1fr}}
+  .feature{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:16px;
+  }
+  .feature-ico{font-size:24px;margin-bottom:8px}
+  .feature h4{font-family:'Fraunces';font-style:italic;font-weight:500;margin:0 0 4px;font-size:16px}
+  .feature p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+  /* FAQ */
+  .faq{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:14px 18px;margin-bottom:10px;
+  }
+  .faq summary{
+    font-family:'Fraunces';font-style:italic;font-weight:500;font-size:16px;
+    cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    color:var(--ink);
+  }
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{
+    content:'+';font-size:22px;font-weight:300;color:var(--berry);
+    transition:.2s;font-family:'Plus Jakarta Sans';font-style:normal;
+  }
+  .faq[open] summary::after{transform:rotate(45deg)}
+  .faq p{margin:10px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-soft)}
+  .faq p strong{color:var(--ink);font-weight:700}
+
+  /* INSTALL CTA */
+  .install{
+    background:var(--ink);color:var(--cream);
+    border-radius:20px;padding:22px 24px;
+    box-shadow:0 14px 30px -10px rgba(43,24,16,.4);
+    margin-top:14px;
+  }
+  .install h3{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    margin:0 0 8px;font-size:22px;color:#fff;
+  }
+  .install p{margin:0 0 12px;font-size:13.5px;line-height:1.55;color:rgba(255,255,255,.85)}
+  .install ol{margin:8px 0 0 18px;padding:0;font-size:13.5px;line-height:1.7}
+  .install ol li{margin-bottom:4px;color:rgba(255,255,255,.9)}
+  .install em{font-style:normal;background:rgba(255,255,255,.18);padding:1px 8px;border-radius:6px;font-weight:600;color:#fff;font-size:12.5px}
+
+  /* CLOSING */
+  .closing{
+    text-align:center;margin-top:50px;padding:30px 20px;
+    color:var(--ink-soft);
+  }
+  .closing-quote{
+    font-family:'Fraunces';font-style:italic;font-weight:400;
+    font-size:22px;color:var(--berry-dark);margin:0 0 10px;
+    line-height:1.4;
+  }
+  .closing-signed{
+    font-size:13px;font-style:italic;
+  }
+  .closing-heart{font-size:24px;margin-top:8px;display:block}
+
+  /* DECORATIVE DIVIDER */
+  .divider{
+    text-align:center;margin:40px 0;
+    color:var(--coral);font-size:18px;letter-spacing:1.5em;
+  }
+
+  /* GLOSSARY DOTS */
+  .dot-list{
+    list-style:none;padding:0;margin:14px 0 0;
+  }
+  .dot-list li{
+    position:relative;padding:6px 0 6px 22px;font-size:14px;
+    border-bottom:1px dashed var(--line);
+  }
+  .dot-list li:last-child{border-bottom:none}
+  .dot-list li::before{
+    content:'';position:absolute;left:0;top:13px;
+    width:8px;height:8px;border-radius:50%;background:var(--coral);
+  }
+  .dot-list strong{color:var(--ink);font-weight:700}
+
+  @media print{
+    body{background:#fff !important}
+    .install,.hero{box-shadow:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="hero-emoji">🌸</span>
+    <h1>A Little Guide<br/>for Mama</h1>
+    <div class="sub">How to use Daivik's Food Journey</div>
+    <div class="from">made with love · <strong>for you</strong></div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro">
+    <p>Hi love 💛 This is a tiny app I built just for you, so feeding our little Daivik feels less like spreadsheets and more like a sweet daily ritual. Everything the dietician sends — every veggie, every dal, every "any fruit of mom's choice" — lives here in one place.</p>
+    <p>You don't need to remember anything. You don't need internet. Just open the app, tap a few things, and the rest takes care of itself. This little guide will walk you through it gently. Take your time. 🌱</p>
+  </div>
+
+  <!-- 1. INSTALL -->
+  <div class="section">
+    <div class="section-num"><span class="num">1</span> Getting started</div>
+    <h2>Put the app <span class="accent">on your phone</span></h2>
+
+    <div class="install">
+      <h3>📱 Add it like a real app</h3>
+      <p>So you can tap it from your home screen anytime — no typing URLs, no opening browsers.</p>
+      <ol>
+        <li>Open the app link in <em>Chrome</em> (Android) or <em>Safari</em> (iPhone)</li>
+        <li>Tap the <em>share / menu</em> button (the three dots or the share arrow)</li>
+        <li>Choose <em>"Add to Home Screen"</em></li>
+        <li>Name it "Daivik" 💕 and tap Add</li>
+        <li>Now it sits on your home screen like any other app</li>
+      </ol>
+    </div>
+
+    <div class="tip" style="margin-top:18px">
+      <strong>💡 Quick tip</strong>
+      Allow camera and microphone permission when it asks — that's for meal photos and voice notes. Your data never leaves your phone.
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 2. DAILY USE -->
+  <div class="section">
+    <div class="section-num"><span class="num">2</span> Your daily flow</div>
+    <h2>Three taps a day, <span class="accent">that's it</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon">☀️</div>
+      <div class="step-body">
+        <h3>Morning · open the app</h3>
+        <p>The first screen — <strong>Today</strong> — shows exactly what Daivik should eat today. You'll see Morning, Afternoon, and Evening meals already laid out.</p>
+        <p>Read the food name. If there's a recipe, tap <em>📖 View recipe steps</em> for a step-by-step card view (easier than reading a paragraph).</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon olive">✓</div>
+      <div class="step-body">
+        <h3>After feeding · log it</h3>
+        <p>Tap the meal card. A circle appears — tap it to mark <strong>fed</strong>. The card turns soft green. 🌿</p>
+        <p>Want to add more? Tap the meal name itself to expand and you'll get:</p>
+      </div>
+    </div>
+
+    <div class="features" style="margin-top:6px;margin-bottom:14px">
+      <div class="feature">
+        <div class="feature-ico">📏</div>
+        <h4>Quantity</h4>
+        <p>"5 tsp", "half katori" — whatever feels right to you.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">📸</div>
+        <h4>Photo of the meal</h4>
+        <p>Tap the dashed box, snap a quick pic. Cute for memories and useful for the dietician.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">😋</div>
+        <h4>Mood</h4>
+        <p>Loved it / Okay / Fussy / Refused. One tap.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">⚠️</div>
+        <h4>Reactions</h4>
+        <p>Tap if you notice rash, gas, runny nose etc. The app remembers.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">📝</div>
+        <h4>Notes</h4>
+        <p>Anything you want to remember. "He grabbed the spoon today!" 💛</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">🎙</div>
+        <h4>Voice note</h4>
+        <p>Tap <em>🎙 Voice note</em> and speak — your words become notes. One-handed friendly.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon mustard">🌙</div>
+      <div class="step-body">
+        <h3>End of day · that's all</h3>
+        <p>Really. Just close the app. Everything saves automatically. No "save" button to remember, no losing data. ✨</p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>🌸 Gentle reminder</strong>
+      If you forget to log a meal — totally fine. Open the <em>Plan</em> tab, find the day, and add it later. Some days you'll log every detail, some days nothing. Both are okay.
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 3. THE TABS -->
+  <div class="section">
+    <div class="section-num"><span class="num">3</span> The five tabs</div>
+    <h2>Knowing where <span class="accent">everything lives</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon coral">🏠</div>
+      <div class="step-body">
+        <h3>Today</h3>
+        <p>What to feed Daivik right now. Auto-knows the date and shows the matching day's meals. Has your streak count, food count, and a <em>📤 Share</em> shortcut.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">📅</div>
+      <div class="step-body">
+        <h3>Plan</h3>
+        <p>All 7 weeks of the diet plan. Swipe left/right with the arrows or tap the week name to jump. Each day is a card — tap to open. Today's day is highlighted in red so you don't lose track.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon olive">🥬</div>
+      <div class="step-body">
+        <h3>Foods</h3>
+        <p>Every vegetable, dal, and fruit organized by section. Tap to mark <strong>tried</strong>. <strong>Long-press</strong> (hold for a second) to flag a food that's causing reactions — it'll show ⚠ everywhere.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon berry">📊</div>
+      <div class="step-body">
+        <h3>Insights</h3>
+        <p>Beautiful charts: how many meals you logged each week, food variety, Daivik's mood pattern, growth over time, and a list of any reactions noted. Lovely to look back at.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon mustard">👶</div>
+      <div class="step-body">
+        <h3>Profile</h3>
+        <p>Daivik's photo, age, growth log (add new weight/length here), reminders setup, RDA targets, milestones, and data export/import.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 4. SUPERPOWERS -->
+  <div class="section">
+    <div class="section-num"><span class="num">4</span> The fun stuff</div>
+    <h2>Little <span class="accent">superpowers</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon">🔍</div>
+      <div class="step-body">
+        <h3>Search anything</h3>
+        <p>Tap the magnifying glass at the top. Type "beetroot" or "khichdi" and it finds the meal, the day, the food list entry. Tap a result to jump there.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">⚠️</div>
+      <div class="step-body">
+        <h3>Automatic allergy alerts</h3>
+        <p>If you log a reaction on the same food twice, the app <strong>auto-flags</strong> it. It'll show a ⚠ banner on the Today screen and red border around that meal across all weeks. So you don't have to remember.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">💡</div>
+      <div class="step-body">
+        <h3>"Any vege from the list" → smart suggestions</h3>
+        <p>When the plan says something vague like <em>"any vitamin A rich vege"</em>, the Today screen suggests safe options Daivik has already tried (and skips flagged ones). No guessing.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">🔔</div>
+      <div class="step-body">
+        <h3>Meal-time reminders</h3>
+        <p>Go to <strong>Profile → Reminders → Enable</strong>. You'll get gentle nudges at 8 AM, 1:30 PM, and 6 PM. Tap the notification to jump straight to logging.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">📤</div>
+      <div class="step-body">
+        <h3>Share with the dietician</h3>
+        <p>Tap <em>📤 Share</em> on the Today screen (or the share quick-card). The app builds a clean summary of the last 7 days — meals, moods, reactions, growth — and you can copy it, send via WhatsApp, or email. One tap.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">📊</div>
+      <div class="step-body">
+        <h3>Export feedback as Excel</h3>
+        <p>Tap the big <strong>+</strong> button (bottom right) → <em>📊 Export feedback (Excel)</em>. Pick which weeks → download a proper Excel file with your notes neatly tabled. Perfect for the dietician.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">📥</div>
+      <div class="step-body">
+        <h3>Adding new weeks</h3>
+        <p>When the dietician sends the next week's Excel file:</p>
+        <p>Tap <strong>+</strong> → <em>📥 Import week (Excel)</em> → pick the file. The app reads it automatically and adds all the days. ✨</p>
+        <p>If you only have notes (not Excel), tap <em>✏️ Add blank week</em> instead and fill in manually.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon">🌙</div>
+      <div class="step-body">
+        <h3>Dark mode for night feeds</h3>
+        <p>Tap the moon icon at the top right. Softer on the eyes when feeding at 2 AM. 🌚</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 5. WEEKLY -->
+  <div class="section">
+    <div class="section-num"><span class="num">5</span> Once a week</div>
+    <h2>The <span class="accent">weekly ritual</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon coral">📏</div>
+      <div class="step-body">
+        <h3>Log Daivik's weight & height</h3>
+        <p>Profile → <em>+ Add</em> next to "Growth log" → enter measurements. The chart in Insights builds itself over time. Watching him grow is going to be your favorite chart. 💛</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon coral">📤</div>
+      <div class="step-body">
+        <h3>Send the weekly report</h3>
+        <p>Before your dietician check-in, tap <em>📤 Share</em> or export the Excel. Saves you typing during the call.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon coral">📦</div>
+      <div class="step-body">
+        <h3>Backup (peace of mind)</h3>
+        <p>Once a week, go to <strong>Profile → Export data</strong>. Save the file in your Google Drive or send it to yourself on WhatsApp. If you ever change phones, you can <em>Import</em> it back.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 6. FAQ -->
+  <div class="section">
+    <div class="section-num"><span class="num">6</span> If you wonder...</div>
+    <h2>Little <span class="accent">questions</span></h2>
+
+    <details class="faq">
+      <summary>Will I lose my data if I close the app?</summary>
+      <p>No. Everything is saved instantly as you tap. You can close the app, restart your phone, switch off — it all stays.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Do I need internet to use it?</summary>
+      <p>No 🎉 Works completely offline once it's loaded once. Internet only needed if you want to share via WhatsApp/email.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What if I tap something by mistake?</summary>
+      <p>Tap it again to undo. Marked fed by mistake? Tap the green circle to unmark. Wrong mood? Tap it again. Nothing is permanent.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Can dadi or papa also use it on their phones?</summary>
+      <p>They can install it on their phone, but right now each phone has its own data. If you want shared data across phones, ask papa — he knows the plan. 😉</p>
+    </details>
+
+    <details class="faq">
+      <summary>What if Daivik doesn't eat what's planned?</summary>
+      <p>Totally fine — just don't mark it fed, or mark "Refused" mood. The plan is a guide, not a rule. Babies have off days, and your dietician knows that.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What if I miss a few days of logging?</summary>
+      <p>No guilt. None. Just pick up from today. The streak will reset and that's okay. The app is here to help, not stress you out.</p>
+    </details>
+
+    <details class="faq">
+      <summary>The voice note didn't work, why?</summary>
+      <p>Voice notes work best in Chrome (Android) or Safari (iPhone). Make sure you allowed microphone access. If still not working, just type — totally fine.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Can I change the reminder times?</summary>
+      <p>Not in the app right now — they're set to 8 AM, 1:30 PM, 6 PM. Tell papa if you want different times and he can change them. 💛</p>
+    </details>
+
+    <details class="faq">
+      <summary>Daivik tried something new — where do I mark it?</summary>
+      <p>Foods tab → find the item → tap. Done. Or open the meal he ate it in and add it to notes.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What does "flagged" mean exactly?</summary>
+      <p>It means that food might be causing reactions (rash, gas, etc.). The app auto-flags if you log reactions on the same food twice. You can also long-press a food in the Foods tab to flag manually. Flagged foods show ⚠ and a red border so you remember to avoid them or check with the dietician.</p>
+    </details>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- 7. CHEAT SHEET -->
+  <div class="section">
+    <div class="section-num"><span class="num">7</span> One-line cheat sheet</div>
+    <h2>If you forget <span class="accent">everything else</span></h2>
+
+    <div class="step-card" style="background:linear-gradient(135deg, var(--cream-2), var(--peach));border-color:rgba(197,56,75,.2)">
+      <div class="step-icon berry">💝</div>
+      <div class="step-body">
+        <h3>The only rules</h3>
+        <ul class="dot-list">
+          <li><strong>Open app</strong> → see today's meals</li>
+          <li><strong>Tap circle</strong> → mark fed</li>
+          <li><strong>Tap meal name</strong> → add details (optional)</li>
+          <li><strong>+ button</strong> → import new week from dietician's Excel</li>
+          <li><strong>📤 Share</strong> → send report to dietician</li>
+          <li><strong>That's it.</strong> Everything else is bonus.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOSING -->
+  <div class="closing">
+    <p class="closing-quote">"You're doing a beautiful job, mama.<br/>Daivik is so lucky to have you."</p>
+    <p class="closing-signed">— with all my love</p>
+    <span class="closing-heart">🌸💛🌱</span>
+  </div>
+
+</div>
+</body>
+</html>
