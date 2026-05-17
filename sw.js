@@ -6,12 +6,15 @@
    - Firebase, Firestore, gstatic, and *.googleapis.com requests → always go to
      network. Caching realtime data would silently desync the app. */
 
-const SHELL_CACHE = 'daivik-shell-v3';
-const RUNTIME_CACHE = 'daivik-runtime-v3';
+const SHELL_CACHE = 'daivik-shell-v4';
+const RUNTIME_CACHE = 'daivik-runtime-v4';
 
 const SHELL_URLS = [
   './',
   './index.html',
+  './styles.css',
+  './seed-data.js',
+  './embedded-photo.js',
   './guide.html',
   './guide-dietician.html',
   './guide-family.html',
