@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function emailOf() {
+      return request.auth.token.email;
+    }
+    function isWriter() {
+      return isSignedIn() &&
+        (emailOf() == 'mom@daivik.app' || emailOf() == 'dad@daivik.app');
+    }
+    function isReader() {
+      return isSignedIn() && (
+        emailOf() == 'mom@daivik.app' ||
+        emailOf() == 'dad@daivik.app' ||
+        emailOf() == 'dietician@daivik.app' ||
+        emailOf() == 'family@daivik.app'
+      );
+    }
+
+    match /meals/{allPaths=**} {
+      allow read:  if isReader();
+      allow write: if isWriter()
+                   && request.resource.size < 3 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /profile/{allPaths=**} {
+      allow read:  if isReader();
+      allow write: if isWriter()
+                   && request.resource.size < 3 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

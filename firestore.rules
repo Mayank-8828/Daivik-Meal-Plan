@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function emailOf() {
+      return request.auth.token.email;
+    }
+    function isWriter() {
+      return isSignedIn() &&
+        (emailOf() == 'mom@daivik.app' || emailOf() == 'dad@daivik.app');
+    }
+    function isReader() {
+      return isSignedIn() && (
+        emailOf() == 'mom@daivik.app' ||
+        emailOf() == 'dad@daivik.app' ||
+        emailOf() == 'dietician@daivik.app' ||
+        emailOf() == 'family@daivik.app'
+      );
+    }
+
+    match /app/state {
+      allow read:  if isReader();
+      allow write: if isWriter();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

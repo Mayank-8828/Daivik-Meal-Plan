@@ -12,6 +12,89 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script type="module">
+/* ============================================================
+   FIREBASE BOOTSTRAP — Firestore (data) + Storage (photos) + Auth
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
+
+/* PASTE YOUR firebaseConfig FROM THE FIREBASE CONSOLE HERE.
+   Project settings → General → Your apps → Web app → Config.
+   Then deploy rules with: firebase deploy --only firestore:rules,storage:rules
+*/
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDaqo8lcbFVQB-sCmyMY--XJhGI1crwhsw",
+  authDomain: "daivik-meal-plan.firebaseapp.com",
+  projectId: "daivik-meal-plan",
+  storageBucket: "daivik-meal-plan.firebasestorage.app",
+  messagingSenderId: "197581914517",
+  appId: "1:197581914517:web:298337cfe85ab6358ff69c"
+};
+
+const ROLE_EMAILS = {
+  mom:       'mom@daivik.app',
+  dad:       'dad@daivik.app',
+  dietician: 'dietician@daivik.app',
+  family:    'family@daivik.app'
+};
+const EMAIL_TO_ROLE = Object.fromEntries(Object.entries(ROLE_EMAILS).map(([k,v])=>[v,k]));
+const WRITER_ROLES = new Set(['mom','dad']);
+
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+const db = getFirestore(app);
+const storage = getStorage(app);
+const stateRef = doc(db, 'app', 'state');
+
+function roleFromUser(user){
+  if(!user || !user.email) return null;
+  return EMAIL_TO_ROLE[user.email.toLowerCase()] || null;
+}
+
+async function uploadDataUrl(path, dataUrl){
+  const r = sRef(storage, path);
+  await uploadString(r, dataUrl, 'data_url');
+  return await getDownloadURL(r);
+}
+function storagePathFromUrl(url){
+  // Firebase download URL: .../o/<encodedPath>?alt=media&...
+  try {
+    const m = url.match(/\/o\/([^?]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch { return null; }
+}
+async function deleteByUrl(url){
+  const path = storagePathFromUrl(url);
+  if(!path) return;
+  try { await deleteObject(sRef(storage, path)); } catch(e){ /* swallow */ }
+}
+
+window.Cloud = {
+  ROLE_EMAILS, EMAIL_TO_ROLE, WRITER_ROLES,
+  auth, db, storage, stateRef,
+  signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
+  signOut: () => signOut(auth),
+  onAuth: (cb) => onAuthStateChanged(auth, cb),
+  roleFromUser,
+  getStateOnce: () => getDoc(stateRef),
+  subscribeState: (cb, err) => onSnapshot(stateRef, cb, err),
+  writeState: (data) => setDoc(stateRef, { ...data, __updatedAt: serverTimestamp() }),
+  uploadDataUrl,
+  deleteByUrl,
+  serverTimestamp
+};
+window.dispatchEvent(new Event('cloud-ready'));
+</script>
 <style>
   :root{
     --cream:#FFF8F0; --cream-2:#FBEFE0; --peach:#FFD9B8;
@@ -612,9 +695,174 @@
   @keyframes gentlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 
   hr.soft{border:none;border-top:1px dashed var(--line);margin:14px 0}
+
+  /* ============================================================
+     LOGIN OVERLAY (Firebase Auth gate)
+     ============================================================ */
+  .login-overlay{
+    position:fixed;inset:0;z-index:9999;
+    background:var(--cream);
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(255,217,184,.6), transparent 50%),
+      radial-gradient(circle at 90% 100%, rgba(168,185,122,.3), transparent 50%);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+    animation: fadeUp .25s;
+  }
+  .login-overlay.hidden{display:none}
+  body:not(.signed-in) > *:not(.login-overlay):not(.toast){visibility:hidden}
+  .login-card{
+    width:100%;max-width:380px;
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:22px;padding:26px 22px 22px;
+    box-shadow:var(--shadow);
+    text-align:center;
+  }
+  .login-mark{
+    width:54px;height:54px;border-radius:17px;margin:0 auto 12px;
+    background:linear-gradient(135deg, var(--coral), var(--berry));
+    display:grid;place-items:center;color:#fff;
+    font-family:'Fraunces';font-weight:700;font-size:28px;font-style:italic;
+    box-shadow: 0 6px 16px -4px rgba(197,56,75,.5);
+  }
+  .login-title{
+    font-family:'Fraunces';font-style:italic;font-weight:600;
+    font-size:22px;margin:0 0 4px;letter-spacing:-.02em;
+  }
+  .login-sub{
+    margin:0 0 18px;font-size:12px;color:var(--ink-soft);
+    letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  }
+  .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+  .role-card{
+    appearance:none;background:var(--cream-2);border:1px solid var(--line);
+    border-radius:16px;padding:18px 10px 14px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    color:var(--ink);font:inherit;font-weight:600;
+    transition:.15s;
+  }
+  .role-card span{font-size:30px;line-height:1}
+  .role-card:active{transform:scale(.96)}
+  .role-card.ro{border-style:dashed}
+  .role-card .ro-tag{
+    font-size:9.5px;color:var(--ink-soft);
+    letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    margin-top:1px;
+  }
+  .pin-panel{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:6px}
+  .pin-role{font-size:13px;color:var(--ink-soft);font-weight:600}
+  .pin-role strong{color:var(--ink);font-weight:700}
+  .pin-dots{display:flex;gap:10px;margin:2px 0}
+  .pin-dots span{
+    width:13px;height:13px;border-radius:50%;
+    border:2px solid var(--line);background:transparent;transition:.15s;
+  }
+  .pin-dots span.on{background:var(--berry);border-color:var(--berry)}
+  .pin-keypad{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    width:100%;max-width:240px;
+  }
+  .pin-keypad button{
+    appearance:none;background:var(--cream-2);border:1px solid var(--line);
+    border-radius:14px;padding:14px 0;font:inherit;font-size:20px;font-weight:600;
+    color:var(--ink);cursor:pointer;transition:.1s;
+  }
+  .pin-keypad button:active{transform:scale(.94);background:var(--peach)}
+  .pin-keypad .key-action{background:transparent;font-size:18px;color:var(--ink-soft)}
+  .pin-keypad #pinGo{background:var(--berry);color:#fff;border-color:var(--berry)}
+  .pin-keypad #pinGo:disabled{opacity:.45;background:var(--line);color:var(--ink-soft);border-color:var(--line)}
+  .pin-error{
+    font-size:12px;color:var(--berry);min-height:14px;font-weight:600;
+  }
+  .back-btn{
+    align-self:flex-start;background:none;border:none;
+    color:var(--ink-soft);font:inherit;font-size:12.5px;font-weight:600;
+    cursor:pointer;padding:0;
+  }
+  .login-foot{margin-top:14px;font-size:11px;color:var(--ink-soft)}
+
+  /* Role gating — readers can't see write controls */
+  body[data-role="dietician"] [data-write],
+  body[data-role="family"]    [data-write],
+  body[data-role="dietician"] .fab-group,
+  body[data-role="family"]    .fab-group,
+  body[data-role="dietician"] .danger-zone,
+  body[data-role="family"]    .danger-zone,
+  body[data-role="dietician"] #enableNotifs,
+  body[data-role="family"]    #enableNotifs,
+  body[data-role="dietician"] .fed-toggle,
+  body[data-role="family"]    .fed-toggle,
+  body[data-role="dietician"] .meal-fields,
+  body[data-role="family"]    .meal-fields,
+  body[data-role="dietician"] .photo-add,
+  body[data-role="family"]    .photo-add,
+  body[data-role="dietician"] .photo-thumb .rm,
+  body[data-role="family"]    .photo-thumb .rm,
+  body[data-role="dietician"] .growth-entry .rm,
+  body[data-role="family"]    .growth-entry .rm {
+    display:none !important;
+  }
+  body[data-role="dietician"] .today-meal-actions,
+  body[data-role="family"]    .today-meal-actions {
+    display:none !important;
+  }
+  body[data-role="dietician"] #profilePhotoWrap,
+  body[data-role="family"]    #profilePhotoWrap { pointer-events:none; cursor:default; }
+  .sign-out-btn{
+    margin-top:10px;background:none;border:1px solid var(--line);
+    color:var(--ink-soft);font:inherit;font-size:12px;font-weight:600;
+    padding:8px 14px;border-radius:99px;cursor:pointer;
+  }
+  .role-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--cream-2);
+    padding:4px 10px;border-radius:99px;border:1px solid var(--line);
+  }
 </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY (shown until Firebase auth state resolves to a known role) -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-mark">D</div>
+    <h2 class="login-title">Daivik's Food Journey</h2>
+    <p class="login-sub" id="loginSub">Pick your role to sign in</p>
+
+    <div id="roleGrid" class="role-grid">
+      <button class="role-card" data-role="mom"><span>👩</span><div>Mom</div></button>
+      <button class="role-card" data-role="dad"><span>👨</span><div>Dad</div></button>
+      <button class="role-card ro" data-role="dietician"><span>🩺</span><div>Dietician</div><div class="ro-tag">View only</div></button>
+      <button class="role-card ro" data-role="family"><span>👪</span><div>Family</div><div class="ro-tag">View only</div></button>
+    </div>
+
+    <div id="pinPanel" class="pin-panel" style="display:none">
+      <button class="back-btn" id="pinBack">← Back</button>
+      <div class="pin-role" id="pinRoleLabel"></div>
+      <div class="pin-dots" id="pinDots">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="pin-keypad">
+        <button data-d="1" type="button">1</button>
+        <button data-d="2" type="button">2</button>
+        <button data-d="3" type="button">3</button>
+        <button data-d="4" type="button">4</button>
+        <button data-d="5" type="button">5</button>
+        <button data-d="6" type="button">6</button>
+        <button data-d="7" type="button">7</button>
+        <button data-d="8" type="button">8</button>
+        <button data-d="9" type="button">9</button>
+        <button data-d="clear" class="key-action" type="button">⌫</button>
+        <button data-d="0" type="button">0</button>
+        <button data-d="go" class="key-action" type="button" id="pinGo" disabled>→</button>
+      </div>
+      <div class="pin-error" id="pinError"></div>
+    </div>
+
+    <div class="login-foot" id="loginFoot">🔒 Shared family access · stays in sync</div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
@@ -808,11 +1056,16 @@
     </div>
 
     <div class="danger-zone">
-      <p><strong>Data tools</strong> · everything lives on this device.</p>
+      <p><strong>Data tools</strong> · synced to Firebase for everyone.</p>
       <button class="btn-danger" id="exportBtn">📦 Export data</button>
       <button class="btn-danger" id="importBtn">📥 Import data</button>
       <input type="file" id="importInput" accept="application/json" style="display:none" />
       <button class="btn-danger" id="resetBtn">⚠ Reset everything</button>
+    </div>
+
+    <div id="accountBox" style="margin-top:18px;text-align:center">
+      <div id="rolePill" class="role-pill" style="display:none"></div>
+      <div><button class="sign-out-btn" id="signOutBtn">Sign out</button></div>
     </div>
   </section>
 </main>
@@ -1094,8 +1347,7 @@ const FRUIT_LIST = [
    ============================================================ */
 const DOB = new Date('2025-10-06');
 const SOLIDS_START = new Date('2026-04-04'); // Day 1
-const STORE_KEY = 'daivik-diet-v2';
-const PHOTO_KEY = 'daivik-photo-v1';
+const STORE_KEY = 'daivik-diet-v2'; // legacy localStorage key — read once during cloud migration
 const THEME_KEY = 'daivik-theme';
 
 const MOODS = [
@@ -1124,26 +1376,67 @@ function defaultState(){
     streak: {count:0, lastDate:null}
   };
 }
-function loadState(){
+/* Cloud-backed state.
+   - `state` is hydrated from Firestore on first snapshot (see initCloudSync below).
+   - `saveState()` debounces a write to Firestore. Only writers (mom/dad) push.
+   - Local-storage reads here are ONLY used to migrate legacy data on first
+     Mom/Dad sign-in (when the Firestore doc is empty). */
+function mergeWithDefaults(s){
+  const d = defaultState();
+  return {
+    ...d,
+    ...s,
+    foods:        {...d.foods,        ...(s.foods||{})},
+    flaggedFoods: {...d.flaggedFoods, ...(s.flaggedFoods||{})},
+    reminders:    {...d.reminders,    ...(s.reminders||{})}
+  };
+}
+function readLegacyLocalState(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(raw){
-      const s = JSON.parse(raw);
-      // Backfill missing keys (migration)
-      const d = defaultState();
-      return {...d, ...s, foods:{...d.foods, ...(s.foods||{})}, flaggedFoods:{...d.flaggedFoods, ...(s.flaggedFoods||{})}, reminders:{...d.reminders, ...(s.reminders||{})}};
-    }
-  }catch(e){console.warn(e)}
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    return mergeWithDefaults(s);
+  }catch(e){ console.warn('legacy read failed', e); return null; }
+}
+function loadState(){
+  // Pre-cloud bootstrap value. Real state arrives via onSnapshot.
   return defaultState();
 }
+
+let __saveTimer = null;
+let __lastWrittenRev = 0;
+let __cloudReady = false;          // true once first snapshot has been applied
+let __currentRole = null;          // set by auth handler
+function __isWriter(){ return __currentRole === 'mom' || __currentRole === 'dad'; }
+
 function saveState(){
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  // Read-only roles: no-op (rules also block, but this avoids noisy attempts).
+  if(!__isWriter()) return;
+  // Pre-cloud: don't write before the first snapshot arrives — we'd clobber
+  // remote data with the local default state.
+  if(!__cloudReady) return;
+  clearTimeout(__saveTimer);
+  __saveTimer = setTimeout(async ()=>{
+    try{
+      __lastWrittenRev = Date.now();
+      const payload = {
+        ...state,
+        __rev: __lastWrittenRev,
+        __updatedBy: __currentRole
+      };
+      await window.Cloud.writeState(payload);
+    }catch(err){
+      console.error('saveState write failed', err);
+      toast('⚠ Could not sync — check connection');
+    }
+  }, 400);
 }
+
 let state = loadState();
 
-// Migrate weeks: merge any new seed weeks
+// Migrate weeks: merge any new seed weeks (kept; runs locally each load)
 SEED_WEEKS.forEach(sw=>{ if(!state.weeks.find(w=>w.id===sw.id)) state.weeks.push(sw); });
-saveState();
 
 /* ============================================================
    HELPERS
@@ -1690,31 +1983,42 @@ function wireMeals(){
     const voiceBtn = m.querySelector('.f-voice');
     voiceBtn.addEventListener('click', ()=> handleVoice(voiceBtn, notes, log));
 
-    // Photo upload
+    // Photo upload → Firebase Storage; log.photos[] holds download URLs.
     const photoInput = m.querySelector('.f-photo');
-    photoInput.addEventListener('change', async e=>{
-      const file = e.target.files[0]; if(!file) return;
-      try{
-        const b64 = await compressImage(file);
-        log.photos = log.photos || [];
-        log.photos.push(b64);
-        saveState();
-        renderPlan();
-        // re-open this meal
-        setTimeout(()=>{
-          const refresh = $$('.day-card .meal').find(x=>x.dataset.week===weekId && +x.dataset.day===dayN && +x.dataset.slot===si);
-          if(refresh){ refresh.classList.add('expanded'); refresh.closest('.day-card').classList.add('open'); }
-        },50);
-        toast('📸 Photo saved');
-      } catch(err){ toast('Could not save photo'); }
-    });
+    if(photoInput){
+      photoInput.addEventListener('change', async e=>{
+        const file = e.target.files[0]; if(!file) return;
+        e.target.value = '';
+        if(!__isWriter()){ toast('Only Mom or Dad can add photos'); return; }
+        try{
+          const b64 = await compressImage(file);
+          toast('📤 Uploading photo…');
+          const path = `meals/${weekId}/${dayN}/${si}/${Date.now()}.jpg`;
+          const url = await window.Cloud.uploadDataUrl(path, b64);
+          log.photos = log.photos || [];
+          log.photos.push(url);
+          saveState();
+          renderPlan();
+          setTimeout(()=>{
+            const refresh = $$('.day-card .meal').find(x=>x.dataset.week===weekId && +x.dataset.day===dayN && +x.dataset.slot===si);
+            if(refresh){ refresh.classList.add('expanded'); refresh.closest('.day-card').classList.add('open'); }
+          },50);
+          toast('📸 Photo saved');
+        } catch(err){ console.error(err); toast('Could not save photo'); }
+      });
+    }
 
-    // Remove photo
+    // Remove photo (also deletes the Storage object best-effort)
     m.querySelectorAll('[data-rmphoto]').forEach(b=>{
-      b.addEventListener('click', e=>{
+      b.addEventListener('click', async e=>{
         e.stopPropagation();
+        if(!__isWriter()) return;
         const i = +b.dataset.rmphoto;
+        const url = log.photos[i];
         log.photos.splice(i,1); saveState(); renderPlan();
+        if(typeof url === 'string' && url.startsWith('http')){
+          window.Cloud.deleteByUrl(url);
+        }
         setTimeout(()=>{
           const refresh = $$('.day-card .meal').find(x=>x.dataset.week===weekId && +x.dataset.day===dayN && +x.dataset.slot===si);
           if(refresh){ refresh.classList.add('expanded'); refresh.closest('.day-card').classList.add('open'); }
@@ -2077,21 +2381,32 @@ function updateProfileStats(){
 }
 
 /* ============================================================
-   PROFILE PHOTO
+   PROFILE PHOTO (Firebase Storage — URL stored in state.profilePhotoUrl)
    ============================================================ */
 function loadPhoto(){
-  if(!localStorage.getItem(PHOTO_KEY)){
-    localStorage.setItem(PHOTO_KEY, EMBEDDED_PHOTO);
-  }
-  $('#profilePhoto').src = localStorage.getItem(PHOTO_KEY);
+  $('#profilePhoto').src = state.profilePhotoUrl || EMBEDDED_PHOTO;
 }
-$('#profilePhotoWrap').addEventListener('click', ()=> $('#profilePhotoInput').click());
+$('#profilePhotoWrap').addEventListener('click', ()=>{
+  if(!__isWriter()) return;
+  $('#profilePhotoInput').click();
+});
 $('#profilePhotoInput').addEventListener('change', async e=>{
   const file = e.target.files[0]; if(!file) return;
-  const b64 = await compressImage(file, 600, 0.85);
-  localStorage.setItem(PHOTO_KEY, b64);
-  $('#profilePhoto').src = b64;
-  toast('📸 Photo updated');
+  e.target.value = '';
+  if(!__isWriter()){ toast('Only Mom or Dad can change the photo'); return; }
+  try{
+    const b64 = await compressImage(file, 600, 0.85);
+    toast('📤 Uploading photo…');
+    const url = await window.Cloud.uploadDataUrl('profile/photo.jpg', b64);
+    // Optimistic local update so reader-snapshot doesn't lag
+    state.profilePhotoUrl = url;
+    $('#profilePhoto').src = url;
+    saveState();
+    toast('📸 Photo updated');
+  }catch(err){
+    console.error(err);
+    toast('Could not upload photo');
+  }
 });
 
 /* ============================================================
@@ -2815,7 +3130,7 @@ function scheduleReminders(){
     const ms = next - new Date();
     setTimeout(()=>{
       try{
-        new Notification('🌱 Daivik\'s meal time', {body:`Time for ${t.label.toLowerCase()}. Tap to log.`, icon: localStorage.getItem(PHOTO_KEY)||undefined});
+        new Notification('🌱 Daivik\'s meal time', {body:`Time for ${t.label.toLowerCase()}. Tap to log.`, icon: state.profilePhotoUrl || undefined});
       }catch(e){}
       // Reschedule for next day
       setTimeout(()=> scheduleReminders(), 1000);
@@ -2837,8 +3152,7 @@ $('#lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') e.tar
    EXPORT / IMPORT / SYNC
    ============================================================ */
 $('#exportBtn').addEventListener('click', ()=>{
-  const photo = localStorage.getItem(PHOTO_KEY);
-  const bundle = {state, photo, exportedAt: new Date().toISOString(), version:2};
+  const bundle = {state, exportedAt: new Date().toISOString(), version:3};
   const blob = new Blob([JSON.stringify(bundle, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -2846,23 +3160,30 @@ $('#exportBtn').addEventListener('click', ()=>{
   a.click();
   toast('📦 Exported');
 });
-$('#importBtn').addEventListener('click', ()=> $('#importInput').click());
+$('#importBtn').addEventListener('click', ()=>{
+  if(!__isWriter()){ toast('Only Mom or Dad can import'); return; }
+  $('#importInput').click();
+});
 $('#importInput').addEventListener('change', async e=>{
   const file = e.target.files[0]; if(!file) return;
-  if(!confirm('Import will OVERWRITE current data. Continue?')) return;
+  e.target.value = '';
+  if(!__isWriter()){ toast('Only Mom or Dad can import'); return; }
+  if(!confirm('Import will OVERWRITE shared data for everyone. Continue?')) return;
   try{
     const txt = await file.text();
     const bundle = JSON.parse(txt);
-    if(bundle.state){ state = bundle.state; saveState(); }
-    if(bundle.photo){ localStorage.setItem(PHOTO_KEY, bundle.photo); }
-    renderAll();
-    toast('📥 Imported');
-  }catch(err){ toast('Could not read file'); }
+    if(bundle.state){
+      state = mergeWithDefaults(bundle.state);
+      saveState();
+      renderAll();
+      toast('📥 Imported');
+    }
+  }catch(err){ console.error(err); toast('Could not read file'); }
 });
 $('#resetBtn').addEventListener('click', ()=>{
-  if(confirm('Reset ALL tracking data? This cannot be undone.')){
-    localStorage.removeItem(STORE_KEY);
-    state = loadState();
+  if(!__isWriter()){ toast('Only Mom or Dad can reset'); return; }
+  if(confirm('Reset ALL shared tracking data for everyone? This cannot be undone.')){
+    state = defaultState();
     SEED_WEEKS.forEach(sw=>{ if(!state.weeks.find(w=>w.id===sw.id)) state.weeks.push(sw); });
     saveState();
     renderAll();
@@ -2871,7 +3192,7 @@ $('#resetBtn').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   INIT
+   INIT — gated on Firebase auth + first Firestore snapshot
    ============================================================ */
 function renderAll(){
   renderToday();
@@ -2883,14 +3204,182 @@ function renderAll(){
   checkNotifPerm();
   detectAllergies();
 }
-renderAll();
-if(state.reminders.enabled && Notification.permission==='granted') scheduleReminders();
+
+function applyRoleToBody(role){
+  __currentRole = role;
+  document.body.dataset.role = role;
+  document.body.classList.add('signed-in');
+  const pill = $('#rolePill');
+  if(pill){
+    const labels = {mom:'👩 Mom', dad:'👨 Dad', dietician:'🩺 Dietician (view only)', family:'👪 Family (view only)'};
+    pill.textContent = labels[role] || role;
+    pill.style.display = 'inline-flex';
+  }
+}
+
+/* Login overlay wiring */
+(function initLogin(){
+  const overlay = $('#loginOverlay');
+  const roleGrid = $('#roleGrid');
+  const pinPanel = $('#pinPanel');
+  const pinDots = $$('#pinDots span');
+  const pinError = $('#pinError');
+  const pinGo = $('#pinGo');
+  const pinRoleLabel = $('#pinRoleLabel');
+  const PIN_MAX = 12, PIN_MIN = 6;
+  let selectedRole = null;
+  let pin = '';
+
+  function updateDots(){
+    pinDots.forEach((d,i)=> d.classList.toggle('on', i < pin.length));
+    pinGo.disabled = pin.length < PIN_MIN;
+  }
+  function showRoles(){
+    selectedRole = null; pin = ''; updateDots();
+    pinError.textContent = '';
+    pinPanel.style.display = 'none';
+    roleGrid.style.display = 'grid';
+    $('#loginSub').textContent = 'Pick your role to sign in';
+  }
+  function showPin(role){
+    selectedRole = role;
+    pin = ''; updateDots();
+    pinError.textContent = '';
+    roleGrid.style.display = 'none';
+    pinPanel.style.display = 'flex';
+    const labels = {mom:'Mom', dad:'Dad', dietician:'Dietician', family:'Family'};
+    pinRoleLabel.innerHTML = `Signing in as <strong>${labels[role]}</strong>`;
+    $('#loginSub').textContent = 'Enter your PIN';
+  }
+
+  roleGrid.addEventListener('click', e=>{
+    const btn = e.target.closest('.role-card'); if(!btn) return;
+    showPin(btn.dataset.role);
+  });
+  $('#pinBack').addEventListener('click', showRoles);
+  $('#pinDots').addEventListener('click', ()=>{}); // no-op
+  pinPanel.addEventListener('click', async e=>{
+    const k = e.target.closest('[data-d]'); if(!k) return;
+    const d = k.dataset.d;
+    pinError.textContent = '';
+    if(d === 'clear'){ pin = pin.slice(0,-1); updateDots(); return; }
+    if(d === 'go'){
+      if(pin.length < PIN_MIN){ pinError.textContent = 'PIN is at least 6 digits'; return; }
+      pinGo.disabled = true;
+      try{
+        await window.Cloud.signIn(window.Cloud.ROLE_EMAILS[selectedRole], pin);
+        // onAuth handler hides overlay; nothing else to do.
+      }catch(err){
+        console.warn('signin err', err);
+        pinError.textContent = (err && err.code === 'auth/invalid-credential') ? 'Wrong PIN, try again' : 'Sign-in failed';
+        pin = ''; updateDots();
+        pinGo.disabled = pin.length < PIN_MIN;
+      }
+      return;
+    }
+    // digit
+    if(pin.length < PIN_MAX){ pin += d; updateDots(); }
+  });
+  // physical keyboard
+  document.addEventListener('keydown', e=>{
+    if(overlay.classList.contains('hidden') || pinPanel.style.display === 'none') return;
+    if(/^[0-9]$/.test(e.key)){ if(pin.length<PIN_MAX){ pin += e.key; updateDots(); pinError.textContent=''; } }
+    else if(e.key === 'Backspace'){ pin = pin.slice(0,-1); updateDots(); }
+    else if(e.key === 'Enter'){ pinGo.click(); }
+  });
+
+  // Expose helpers for the auth handler:
+  window.__hideLogin = () => { overlay.classList.add('hidden'); };
+  window.__showLogin = () => { overlay.classList.remove('hidden'); document.body.classList.remove('signed-in'); showRoles(); };
+})();
+
+$('#signOutBtn')?.addEventListener('click', async ()=>{
+  try{
+    await window.Cloud.signOut();
+    // onAuth handler will re-open the overlay
+  }catch(err){ toast('Sign-out failed'); }
+});
+
+/* Cloud sync: subscribe to /app/state and hydrate `state` from each snapshot.
+   First snapshot:
+     - Mom/Dad + empty doc → run one-time migration from localStorage and seed.
+     - Anyone else        → render defaults until a writer creates the doc. */
+let __unsubState = null;
+async function initCloudSync(){
+  if(__unsubState) __unsubState();
+  __unsubState = window.Cloud.subscribeState(snap=>{
+    if(!snap.exists()){
+      if(__isWriter() && !__cloudReady){
+        // One-time bootstrap (writer): migrate local data if any, otherwise seed defaults
+        const legacy = readLegacyLocalState();
+        const seeded = legacy || defaultState();
+        // Drop legacy inline base64 meal photos (per migration policy)
+        if(seeded.logs){
+          Object.values(seeded.logs).forEach(week=>{
+            Object.values(week).forEach(day=>{
+              Object.values(day).forEach(log=>{ if(Array.isArray(log.photos)) log.photos = []; });
+            });
+          });
+        }
+        // Make sure all seed weeks exist
+        SEED_WEEKS.forEach(sw=>{ if(!seeded.weeks.find(w=>w.id===sw.id)) seeded.weeks.push(sw); });
+        state = mergeWithDefaults(seeded);
+        __cloudReady = true;
+        // First write to populate the doc
+        saveState();
+        renderAll();
+        return;
+      }
+      // Read-only first-time view → defaults
+      state = defaultState();
+      SEED_WEEKS.forEach(sw=>{ if(!state.weeks.find(w=>w.id===sw.id)) state.weeks.push(sw); });
+      __cloudReady = true;
+      renderAll();
+      return;
+    }
+    const remote = snap.data();
+    if(remote.__rev && remote.__rev === __lastWrittenRev){
+      // Echo of our own pending write — ignore
+      __cloudReady = true;
+      return;
+    }
+    state = mergeWithDefaults(remote);
+    __cloudReady = true;
+    renderAll();
+    if(state.reminders && state.reminders.enabled && typeof Notification !== 'undefined' && Notification.permission==='granted'){
+      scheduleReminders();
+    }
+  }, err=>{
+    console.error('snapshot err', err);
+    toast('⚠ Sync error — check connection');
+  });
+}
+
+/* Auth state handler */
+function startWhenReady(){
+  window.Cloud.onAuth(async user=>{
+    const role = window.Cloud.roleFromUser(user);
+    if(!user || !role){
+      __currentRole = null;
+      document.body.removeAttribute('data-role');
+      document.body.classList.remove('signed-in');
+      if(__unsubState){ __unsubState(); __unsubState = null; }
+      window.__showLogin();
+      return;
+    }
+    applyRoleToBody(role);
+    window.__hideLogin();
+    initCloudSync();
+  });
+}
+if(window.Cloud){ startWhenReady(); }
+else { window.addEventListener('cloud-ready', startWhenReady, {once:true}); }
 
 /* ============================================================
    EMBEDDED PHOTO (set below by build step)
    ============================================================ */
 const EMBEDDED_PHOTO = 'data:image/jpeg;base64,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';
-loadPhoto();
+/* loadPhoto() now runs inside renderAll() once the Firestore snapshot lands. */
 </script>
 </body>
 </html>

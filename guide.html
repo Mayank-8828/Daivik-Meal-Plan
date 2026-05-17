@@ -224,7 +224,37 @@
   }
 </style>
 </head>
-<body>
+<body style="visibility:hidden">
+
+<!-- Auth gate: must be signed in via the main app to view the guide. -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+/* Must match the FIREBASE_CONFIG in index.html */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDaqo8lcbFVQB-sCmyMY--XJhGI1crwhsw",
+  authDomain: "daivik-meal-plan.firebaseapp.com",
+  projectId: "daivik-meal-plan",
+  storageBucket: "daivik-meal-plan.firebasestorage.app",
+  messagingSenderId: "197581914517",
+  appId: "1:197581914517:web:298337cfe85ab6358ff69c"
+};
+const ALLOWED = new Set([
+  'mom@daivik.app','dad@daivik.app','dietician@daivik.app','family@daivik.app'
+]);
+
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth, user=>{
+  if(user && user.email && ALLOWED.has(user.email.toLowerCase())){
+    document.body.style.visibility = '';
+  } else {
+    window.location.replace('index.html');
+  }
+});
+</script>
 <div class="wrap">
 
   <!-- HERO -->
