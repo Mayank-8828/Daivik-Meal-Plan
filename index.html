@@ -463,6 +463,77 @@ window.dispatchEvent(new Event('cloud-ready'));
     font-size:20px;color:var(--ink-soft);
   }
 
+  /* Meal CRUD actions (writer-only, hidden via [data-write] for readers) */
+  .meal-actions{
+    display:flex;gap:6px;flex-wrap:wrap;
+    margin:10px 0 4px;padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .meal-act{
+    flex:1;min-width:80px;
+    appearance:none;background:var(--paper);border:1px solid var(--line);
+    color:var(--ink);font:inherit;font-size:11.5px;font-weight:700;
+    padding:7px 10px;border-radius:10px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;
+    transition:.15s;
+  }
+  .meal-act:hover{background:var(--cream-2);border-color:var(--berry)}
+  .meal-act:active{transform:scale(.97)}
+  .meal-act.danger{color:var(--berry);border-color:rgba(197,56,75,.35)}
+  .meal-act.danger:hover{background:rgba(197,56,75,.06);border-color:var(--berry)}
+  .add-meal-btn{
+    appearance:none;width:100%;
+    background:transparent;border:1.5px dashed var(--line);
+    color:var(--ink-soft);font:inherit;font-size:13px;font-weight:700;
+    padding:11px;border-radius:14px;cursor:pointer;
+    margin-top:6px;
+    transition:.15s;
+  }
+  .add-meal-btn:hover{ border-color:var(--berry); color:var(--berry); background:rgba(197,56,75,.04) }
+  .add-meal-btn:active{ transform:scale(.99) }
+
+  /* Move-meal target grid */
+  .move-week-tabs{
+    display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+    padding:2px;margin-bottom:14px;
+  }
+  .move-week-tabs::-webkit-scrollbar{display:none}
+  .move-week-tab{
+    appearance:none;background:var(--paper);border:1px solid var(--line);
+    color:var(--ink);font:inherit;font-size:12px;font-weight:700;
+    padding:7px 12px;border-radius:99px;cursor:pointer;flex-shrink:0;
+    white-space:nowrap;transition:.15s;
+  }
+  .move-week-tab.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+  .target-day-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    max-height:55vh;overflow-y:auto;padding:2px;
+  }
+  @media (max-width:380px){ .target-day-grid{grid-template-columns:repeat(3,1fr)} }
+  .target-day{
+    appearance:none;background:var(--paper);border:1px solid var(--line);
+    border-radius:12px;padding:10px 6px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    color:var(--ink);font:inherit;font-weight:700;text-align:center;
+    transition:.15s;position:relative;
+  }
+  .target-day .tdn{
+    font-family:'Fraunces';font-style:italic;font-weight:600;font-size:18px;
+    color:var(--berry);line-height:1;
+  }
+  .target-day .tdmeta{
+    font-size:9.5px;color:var(--ink-soft);font-weight:600;
+    letter-spacing:.04em;text-transform:uppercase;margin-top:2px;
+  }
+  .target-day:hover{ border-color:var(--berry); background:var(--cream-2) }
+  .target-day.current{ outline:2px solid rgba(197,56,75,.25); outline-offset:-2px }
+  .target-day.current::after{
+    content:'current';position:absolute;top:-6px;right:6px;
+    font-size:8px;background:var(--berry);color:#fff;
+    padding:1px 6px;border-radius:99px;letter-spacing:.06em;
+    text-transform:uppercase;font-weight:700;
+  }
+
   .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .chip{
     padding:6px 11px;border-radius:99px;font-size:11px;font-weight:600;
@@ -1330,6 +1401,51 @@ window.dispatchEvent(new Event('cloud-ready'));
   </div>
 </div>
 
+<!-- EDIT MEAL MODAL -->
+<div class="modal-backdrop" id="editMealBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="editMealTitle">Edit meal</h3>
+      <button class="x-btn" id="editMealClose">✕</button>
+    </div>
+    <div class="field">
+      <label>Time of day</label>
+      <select id="editMealTime">
+        <option value="Morning">🌅 Morning</option>
+        <option value="Lunch">🍲 Lunch</option>
+        <option value="Afternoon">☀️ Afternoon</option>
+        <option value="Evening">🌇 Evening</option>
+        <option value="Snack">🍪 Snack</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Food / dish</label>
+      <input type="text" id="editMealFood" placeholder="e.g. Mashed sweet potato" />
+    </div>
+    <div class="field">
+      <label>Notes / recipe (optional)</label>
+      <textarea id="editMealNotes" placeholder="Cooking method, spices, quantity..."></textarea>
+    </div>
+    <button class="btn-primary" id="saveEditMeal">Save</button>
+  </div>
+</div>
+
+<!-- MOVE MEAL MODAL -->
+<div class="modal-backdrop" id="moveMealBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Move meal</h3>
+      <button class="x-btn" id="moveMealClose">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px">
+      Moving <strong id="moveMealLabel" style="color:var(--ink)"></strong>.
+      All logged details (fed mark, photos, notes, mood) move with it.
+    </p>
+    <div class="move-week-tabs" id="moveWeekTabs"></div>
+    <div class="target-day-grid" id="moveDayGrid"></div>
+  </div>
+</div>
+
 <!-- GROWTH MODAL -->
 <div class="modal-backdrop" id="growthBackdrop">
   <div class="modal">
@@ -2034,6 +2150,212 @@ $('#weekSelect').addEventListener('change', e=>{
 /* ============================================================
    PLAN RENDER
    ============================================================ */
+/* ============================================================
+   MEAL CRUD — writers only (mom/dad)
+   ============================================================ */
+function findDay(weekId, dayN){
+  const w = state.weeks.find(x=>x.id===weekId);
+  if(!w) return {week:null, day:null};
+  return {week:w, day: w.days.find(d=>d.n===dayN) || null};
+}
+
+/* Reindex logs for a day after a slot is inserted-at or removed-at `pivotIdx`.
+   `shift = -1` for a removal (slot at pivotIdx is gone, later slots move up),
+   `shift = +1` for an insertion (later slots move down to make room). */
+function reindexDayLogs(weekId, dayN, pivotIdx, shift){
+  const dayLogs = state.logs?.[weekId]?.[dayN];
+  if(!dayLogs) return;
+  const keys = Object.keys(dayLogs).map(Number).sort((a,b)=> shift<0 ? a-b : b-a);
+  const next = {};
+  keys.forEach(k=>{
+    if(shift < 0){
+      if(k < pivotIdx) next[k] = dayLogs[k];
+      else if(k === pivotIdx) { /* dropped */ }
+      else next[k - 1] = dayLogs[k];
+    } else {
+      if(k < pivotIdx) next[k] = dayLogs[k];
+      else next[k + 1] = dayLogs[k];
+    }
+  });
+  state.logs[weekId][dayN] = next;
+}
+
+function addMealSlot(weekId, dayN, slot){
+  const {day} = findDay(weekId, dayN);
+  if(!day) return -1;
+  day.slots.push({time: slot.time || 'Snack', food: slot.food || '', notes: slot.notes || ''});
+  return day.slots.length - 1;
+}
+
+function updateMealSlot(weekId, dayN, slotIdx, patch){
+  const {day} = findDay(weekId, dayN);
+  if(!day || !day.slots[slotIdx]) return;
+  Object.assign(day.slots[slotIdx], patch);
+}
+
+function deleteMealSlot(weekId, dayN, slotIdx){
+  const {day} = findDay(weekId, dayN);
+  if(!day || !day.slots[slotIdx]) return;
+  // Collect Storage photo URLs for best-effort delete
+  const log = state.logs?.[weekId]?.[dayN]?.[slotIdx];
+  const photoUrls = (log?.photos || []).filter(p => typeof p==='string' && p.startsWith('http'));
+  day.slots.splice(slotIdx, 1);
+  reindexDayLogs(weekId, dayN, slotIdx, -1);
+  // Storage cleanup (no await — UI proceeds immediately)
+  photoUrls.forEach(url => { try { window.Cloud.deleteByUrl(url); } catch(e){} });
+}
+
+function moveMealSlot(fromWeekId, fromDayN, fromSlotIdx, toWeekId, toDayN){
+  const {day: src} = findDay(fromWeekId, fromDayN);
+  const {day: dst} = findDay(toWeekId, toDayN);
+  if(!src || !dst || !src.slots[fromSlotIdx]) return false;
+  // Same day, same index → no-op
+  if(fromWeekId === toWeekId && fromDayN === toDayN) return false;
+
+  const slot = src.slots[fromSlotIdx];
+  const log = state.logs?.[fromWeekId]?.[fromDayN]?.[fromSlotIdx];
+
+  // Append to target
+  dst.slots.push({time: slot.time, food: slot.food, notes: slot.notes});
+  const newIdx = dst.slots.length - 1;
+  if(log){
+    state.logs ||= {};
+    state.logs[toWeekId] ||= {};
+    state.logs[toWeekId][toDayN] ||= {};
+    state.logs[toWeekId][toDayN][newIdx] = log;
+  }
+  // Remove from source (don't trigger photo-delete — they moved with the log)
+  src.slots.splice(fromSlotIdx, 1);
+  reindexDayLogs(fromWeekId, fromDayN, fromSlotIdx, -1);
+  return true;
+}
+
+/* Re-open a meal after re-render so the user keeps their context. */
+function reopenMeal(weekId, dayN, slotIdx){
+  setTimeout(()=>{
+    const refresh = $$('.day-card .meal').find(x =>
+      x.dataset.week === weekId && +x.dataset.day === dayN && +x.dataset.slot === slotIdx
+    );
+    if(refresh){
+      refresh.classList.add('expanded');
+      refresh.closest('.day-card').classList.add('open');
+      refresh.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }, 60);
+}
+
+/* ============================================================
+   EDIT MEAL MODAL
+   ============================================================ */
+let __editContext = null; // {weekId, dayN, slotIdx} | {weekId, dayN, slotIdx:null} for new
+function openEditMeal(weekId, dayN, slotIdx){
+  if(!__isWriter()) return;
+  const {day} = findDay(weekId, dayN);
+  if(!day) return;
+  const isNew = slotIdx == null;
+  const slot = isNew ? {time:'Snack', food:'', notes:''} : day.slots[slotIdx];
+  if(!slot) return;
+  __editContext = {weekId, dayN, slotIdx: isNew ? null : slotIdx};
+  $('#editMealTitle').textContent = isNew ? `Add meal · Day ${dayN}` : `Edit meal · Day ${dayN}`;
+  $('#editMealTime').value = slot.time || 'Snack';
+  $('#editMealFood').value = slot.food || '';
+  $('#editMealNotes').value = slot.notes || '';
+  $('#editMealBackdrop').classList.add('show');
+  setTimeout(()=> $('#editMealFood').focus(), 60);
+}
+$('#editMealClose').addEventListener('click', ()=> $('#editMealBackdrop').classList.remove('show'));
+$('#editMealBackdrop').addEventListener('click', e=>{
+  if(e.target.id === 'editMealBackdrop') $('#editMealBackdrop').classList.remove('show');
+});
+$('#saveEditMeal').addEventListener('click', ()=>{
+  if(!__isWriter() || !__editContext) return;
+  const time = $('#editMealTime').value;
+  const food = $('#editMealFood').value.trim();
+  const notes = $('#editMealNotes').value.trim();
+  if(!food){ toast('Please add a food name'); return; }
+  const {weekId, dayN, slotIdx} = __editContext;
+  let openIdx;
+  if(slotIdx == null){
+    openIdx = addMealSlot(weekId, dayN, {time, food, notes});
+    toast('🍽 Meal added');
+  } else {
+    updateMealSlot(weekId, dayN, slotIdx, {time, food, notes});
+    openIdx = slotIdx;
+    toast('✏️ Meal updated');
+  }
+  saveState();
+  $('#editMealBackdrop').classList.remove('show');
+  renderPlan();
+  if(state.currentWeekId !== weekId){
+    // Switch the visible week if needed
+    state.currentWeekId = weekId; saveState(); renderPlan();
+  }
+  reopenMeal(weekId, dayN, openIdx);
+});
+
+/* ============================================================
+   MOVE MEAL MODAL
+   ============================================================ */
+let __moveContext = null;        // source slot ref
+let __moveTargetWeekId = null;   // currently shown target week in the picker
+function openMoveMeal(weekId, dayN, slotIdx){
+  if(!__isWriter()) return;
+  const {day} = findDay(weekId, dayN);
+  if(!day || !day.slots[slotIdx]) return;
+  __moveContext = {weekId, dayN, slotIdx};
+  const slot = day.slots[slotIdx];
+  $('#moveMealLabel').textContent = `${slot.time} — ${slot.food}`;
+  __moveTargetWeekId = weekId; // default to source week
+  renderMoveTargets();
+  $('#moveMealBackdrop').classList.add('show');
+}
+function renderMoveTargets(){
+  // Week tabs
+  const tabs = $('#moveWeekTabs'); tabs.innerHTML = '';
+  state.weeks.forEach(w=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'move-week-tab' + (w.id === __moveTargetWeekId ? ' active' : '');
+    b.textContent = w.name;
+    b.addEventListener('click', ()=>{ __moveTargetWeekId = w.id; renderMoveTargets(); });
+    tabs.appendChild(b);
+  });
+  // Day grid
+  const grid = $('#moveDayGrid'); grid.innerHTML = '';
+  const targetWeek = state.weeks.find(w=> w.id === __moveTargetWeekId);
+  if(!targetWeek) return;
+  targetWeek.days.forEach(d=>{
+    const isCurrent = (__moveContext &&
+      __moveContext.weekId === targetWeek.id &&
+      __moveContext.dayN === d.n);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'target-day' + (isCurrent ? ' current' : '');
+    b.disabled = isCurrent;
+    if(isCurrent) b.style.opacity = '.55';
+    b.innerHTML = `<span class="tdn">${d.n}</span><span class="tdmeta">${d.slots.length} meals</span>`;
+    b.addEventListener('click', ()=>{
+      if(isCurrent) return;
+      const {weekId:fw, dayN:fd, slotIdx:fs} = __moveContext;
+      const ok = moveMealSlot(fw, fd, fs, targetWeek.id, d.n);
+      if(!ok){ toast('Could not move meal'); return; }
+      saveState();
+      $('#moveMealBackdrop').classList.remove('show');
+      // Switch to the destination week so the user lands on the moved meal
+      state.currentWeekId = targetWeek.id; saveState();
+      renderPlan();
+      const newIdx = state.weeks.find(w=>w.id===targetWeek.id).days.find(x=>x.n===d.n).slots.length - 1;
+      reopenMeal(targetWeek.id, d.n, newIdx);
+      toast(`↪ Moved to Day ${d.n}`);
+    });
+    grid.appendChild(b);
+  });
+}
+$('#moveMealClose').addEventListener('click', ()=> $('#moveMealBackdrop').classList.remove('show'));
+$('#moveMealBackdrop').addEventListener('click', e=>{
+  if(e.target.id === 'moveMealBackdrop') $('#moveMealBackdrop').classList.remove('show');
+});
+
 function renderPlan(){
   const week = state.weeks[currentWeekIdx()];
   if(!week){ state.currentWeekId = state.weeks[state.weeks.length-1].id; return renderPlan(); }
@@ -2092,6 +2414,7 @@ function renderPlan(){
       </div>
       <div class="day-body">
         ${day.slots.map((s,si)=> renderMeal(week.id, day.n, si, s)).join('')}
+        <button class="add-meal-btn" type="button" data-write data-add-meal data-week="${week.id}" data-day="${day.n}">+ Add a meal to this day</button>
       </div>
     `;
     card.querySelector('.day-header').addEventListener('click', ()=> card.classList.toggle('open'));
@@ -2153,6 +2476,11 @@ function renderMeal(weekId, dayN, slotIdx, slot){
           <div class="textarea-actions">
             <button class="small-btn f-voice" type="button">🎙 Voice note</button>
           </div>
+        </div>
+        <div class="meal-actions" data-write>
+          <button class="meal-act" type="button" data-meal-act="edit">✏️ Edit meal</button>
+          <button class="meal-act" type="button" data-meal-act="move">↪ Move</button>
+          <button class="meal-act danger" type="button" data-meal-act="delete">🗑 Delete</button>
         </div>
       </div>
     </div>
@@ -2274,6 +2602,40 @@ function wireMeals(){
         openRecipe(data.title, data.notes);
       });
     }
+
+    // Edit / Move / Delete actions (writer-only — CSS also hides for readers)
+    m.querySelectorAll('[data-meal-act]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        if(!__isWriter()) return;
+        const action = btn.dataset.mealAct;
+        if(action === 'edit'){
+          openEditMeal(weekId, dayN, si);
+        } else if(action === 'move'){
+          openMoveMeal(weekId, dayN, si);
+        } else if(action === 'delete'){
+          const slotInfo = state.weeks.find(w=>w.id===weekId)?.days.find(d=>d.n===dayN)?.slots[si];
+          const label = slotInfo ? `"${slotInfo.food}"` : 'this meal';
+          if(confirm(`Delete ${label} from Day ${dayN}? Logged details (photos, notes, mood) will be removed.`)){
+            deleteMealSlot(weekId, dayN, si);
+            saveState();
+            renderPlan();
+            toast('🗑 Meal deleted');
+          }
+        }
+      });
+    });
+  });
+
+  // "+ Add a meal" buttons — one per day
+  $$('[data-add-meal]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      if(!__isWriter()) return;
+      const weekId = btn.dataset.week;
+      const dayN = +btn.dataset.day;
+      openEditMeal(weekId, dayN, null);
+    });
   });
 }
 
