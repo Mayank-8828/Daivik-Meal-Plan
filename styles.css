@@ -971,10 +971,19 @@ body[data-role="family"]    .food-item.custom .rmf,
 body[data-role="dietician"] .food-item.custom .rmf { /* dietician CAN delete custom foods */ }
 body[data-role="family"]    .food-item.custom .rmf { display:none !important; }
 .sign-out-btn{
-  margin-top:10px;background:none;border:1px solid var(--line);
-  color:var(--ink-soft);font:inherit;font-size:12px;font-weight:600;
-  padding:8px 14px;border-radius:99px;cursor:pointer;
+  margin-top:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:44px;min-width:140px;
+  background:var(--paper);border:1px solid var(--line);
+  color:var(--ink);font:inherit;font-size:13px;font-weight:700;
+  padding:10px 22px;border-radius:99px;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+  position:relative;z-index:1;
+  transition:.15s;
 }
+.sign-out-btn:hover{background:var(--cream-2)}
+.sign-out-btn:active{transform:scale(.97);background:var(--cream-2)}
 .role-pill{
   display:inline-flex;align-items:center;gap:6px;
   font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;

@@ -221,14 +221,22 @@ onAuthStateChanged(auth, user=>{
   <div class="hero">
     <span class="hero-emoji">🩺</span>
     <h1>For our dietician<br/>— a quick orientation</h1>
-    <div class="sub">A shared, real-time view of how Daivik is actually eating this week — meals, moods, reactions, growth.</div>
+    <div class="sub">A shared, real-time view of how Daivik is actually eating this week — and a place where you can shape next week's plan directly.</div>
     <div class="baby">Daivik · born 6 Oct 2025 · started solids 4 April 2026</div>
   </div>
 
   <div class="intro">
-    <p>Thank you for using this app with us 💚 We built it so you can see <strong>exactly what's happening on the ground</strong> between consultations — without us having to remember every detail on a call.</p>
-    <p>You have <strong>view-only access</strong> across every screen. Everything Mama and Papa log shows up here in real time, usually within a second. You can't accidentally edit anything — the app simply hides the edit buttons for you.</p>
-    <p>This guide takes 3 minutes. Sections 2 and 3 are the most useful — they show you where to find the data points you actually care about.</p>
+    <p>Thank you for using this app with us 💚 We built it so you can see <strong>exactly what's happening on the ground</strong> between consultations — and so you can <strong>edit the plan directly</strong> instead of going through emails and Excel attachments.</p>
+    <p>Your account is a <strong>planner</strong> account — you can:</p>
+    <ul class="dot-list">
+      <li><strong>See everything</strong> Mama and Papa log, in real time (usually under a second).</li>
+      <li><strong>Edit, move, delete, or add any meal</strong> on any day, in any week.</li>
+      <li><strong>Add a brand new week</strong> manually, or import one from an Excel sheet.</li>
+      <li><strong>Add or remove items</strong> from the master food list (vegetables, dals, fruits).</li>
+      <li><strong>Flag a food</strong> long-press if it should be avoided.</li>
+    </ul>
+    <p style="margin-top:10px">You <em>cannot</em> mark meals as "fed", add quantities/mood/photos/notes (that's Mama and Papa's daily log), or change Daivik's growth measurements and profile photo. The app hides those buttons for you so the daily-log surface stays simple.</p>
+    <p>This guide takes 4 minutes. Section 3 is the new and most useful one — it walks through every editing tool you have.</p>
   </div>
 
   <div class="section">
@@ -308,7 +316,76 @@ onAuthStateChanged(auth, user=>{
   <div class="divider">· · ·</div>
 
   <div class="section">
-    <div class="section-num"><span class="num">3</span> What to look for</div>
+    <div class="section-num"><span class="num">3</span> Editing the plan</div>
+    <h2>The tools <span class="accent">you have</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon teal">✏️</div>
+      <div class="step-body">
+        <h3>Edit any meal</h3>
+        <p>Open the <strong>Plan</strong> tab → tap any day card to expand → tap a meal name. Three buttons appear at the bottom of the meal: <em>✏️ Edit meal</em>, <em>↪ Move</em>, <em>🗑 Delete</em>.</p>
+        <p><strong>Edit</strong> lets you change the time of day, the food/dish name, and the recipe notes. Saves in place; logged details (Mama's quantity, photos, mood) are preserved.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">↪</div>
+      <div class="step-body">
+        <h3>Move a meal to another day</h3>
+        <p>From the same expanded meal, tap <em>↪ Move</em>. A picker opens with a tab strip of all weeks and a grid of days. Tap any target day and the meal jumps there — <strong>along with everything Mama already logged for it</strong> (fed mark, qty, mood, reactions, photos, notes). The current day is greyed out.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">🗑</div>
+      <div class="step-body">
+        <h3>Delete a meal</h3>
+        <p><em>🗑 Delete</em> removes the slot after a confirm. Any logged photos in Firebase Storage are cleaned up too. Other meals on the same day stay attached to Mama's logs (the indexes are renumbered automatically).</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">＋</div>
+      <div class="step-body">
+        <h3>Add a meal to a day</h3>
+        <p>Scroll to the bottom of any expanded day card → <em>+ Add a meal to this day</em>. Same modal as Edit: time, food, notes. New slot lands at the end of that day.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">📥</div>
+      <div class="step-body">
+        <h3>Import the next week from Excel</h3>
+        <p>Tap the round <strong>+</strong> button (bottom-right corner) → <em>📥 Import week (Excel)</em> → pick your file. The app reads any sheet named <em>"Week 8"</em>, <em>"Week 9"</em> etc. with columns <em>Day · Time · Food · Notes</em> and adds those weeks to the plan. If a week with that name exists, it's replaced (logs preserved).</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">✏️</div>
+      <div class="step-body">
+        <h3>Add a blank week manually</h3>
+        <p>Same <strong>+</strong> button → <em>✏️ Add blank week</em>. Useful if you don't have an Excel handy and want to scaffold the week directly in the app.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon olive">🥬</div>
+      <div class="step-body">
+        <h3>Add or remove foods from the master list</h3>
+        <p>Open the <strong>Foods</strong> tab. At the top of each category (vege / dal / fruit) you'll see a small <em>"+ Add"</em> row — pick a section, type the new item, tap Add. Custom items render with a dashed border and a small <em>✕</em> to remove them later. Long-press any item to flag it (avoids in suggestions and shows ⚠ everywhere).</p>
+      </div>
+    </div>
+
+    <div class="tip" style="margin-top:6px">
+      <strong>🛟 Safety net</strong>
+      Every edit is just a Firestore write — it appears on Mama and Papa's phones within a second. There's no separate "save" step. If you change something by mistake, you can use the same Edit/Move/Delete tools to undo it. Mama can also re-import the previous week's Excel to overwrite a mangled week if needed.
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">4</span> What to look for</div>
     <h2>The data points <span class="accent">that matter</span></h2>
 
     <div class="features">
@@ -353,41 +430,32 @@ onAuthStateChanged(auth, user=>{
   <div class="divider">· · ·</div>
 
   <div class="section">
-    <div class="section-num"><span class="num">4</span> Sending the next week</div>
-    <h2>How <span class="accent">new plans land</span></h2>
-
-    <div class="step-card">
-      <div class="step-icon teal">📤</div>
-      <div class="step-body">
-        <h3>The way it works today</h3>
-        <p>You send Mama the next week's plan as an <strong>Excel sheet</strong> on WhatsApp, just like before. She imports it with one tap from the app and the new week shows up here for you to see too.</p>
-        <p>Format that works best: one sheet per week named <em>"Week 8"</em>, <em>"Week 9"</em>, etc. Columns: Day, Time, Food, Notes. The app handles parsing automatically.</p>
-      </div>
-    </div>
-
-    <div class="step-card">
-      <div class="step-icon olive">📥</div>
-      <div class="step-body">
-        <h3>If you want a weekly digest</h3>
-        <p>Mama has a <em>📤 Share</em> button that builds a clean text summary of the last 7 days — meals, moods, reactions, growth — and sends it via WhatsApp or email. Ask her to use it before each consult if you'd like everything in one message.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="divider">· · ·</div>
-
-  <div class="section">
     <div class="section-num"><span class="num">5</span> Common questions</div>
     <h2>If you <span class="accent">wonder</span></h2>
 
     <details class="faq">
-      <summary>Can I edit anything?</summary>
-      <p>No — the dietician account is intentionally view-only. If you want a change made (a flag corrected, a wrong log fixed), just tell Mama or Papa and they'll do it.</p>
+      <summary>What can I edit, and what can't I?</summary>
+      <p>You can edit anything to do with <strong>the plan</strong>: meals (add / edit / move / delete), entire weeks (import or build manually), and the master food list. You <strong>cannot</strong> mark a meal as "fed", add quantities, mood, photos, or text notes — those are Mama and Papa's daily log. You also cannot edit Daivik's growth measurements or profile photo. The app hides those buttons so the daily-log surface stays clean for them.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Where exactly are the edit buttons?</summary>
+      <p>Plan tab → tap a day card to open it → tap a meal name to expand it. Three buttons at the bottom of the meal: <em>Edit / Move / Delete</em>. To add a meal: scroll to the bottom of the expanded day → <em>+ Add a meal to this day</em>. To add a whole week: round <strong>+</strong> button at the bottom-right of any screen → <em>Import week (Excel)</em> or <em>Add blank week</em>.</p>
+    </details>
+
+    <details class="faq">
+      <summary>If I edit something, when does Mama see it?</summary>
+      <p>Within ~1 second. The app uses Firestore realtime sync — every save you make pushes to all signed-in devices immediately. No refresh, no "save and send" step.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Can I undo an edit?</summary>
+      <p>There's no global undo, but every action is reversible with the same tools: edit a meal back, move it back to the original day (logs travel with it), or re-import the previous Excel to overwrite a week. Tell Mama if you want a sanity check.</p>
     </details>
 
     <details class="faq">
       <summary>How real-time is the sync?</summary>
-      <p>About 1 second. When Mama marks a meal fed, it updates on your screen within a moment. No refresh needed.</p>
+      <p>About 1 second. When Mama marks a meal fed, it updates on your screen within a moment, and vice versa.</p>
     </details>
 
     <details class="faq">
@@ -401,8 +469,8 @@ onAuthStateChanged(auth, user=>{
     </details>
 
     <details class="faq">
-      <summary>Do my views show up to anyone?</summary>
-      <p>No. There's no activity tracking — you can browse freely.</p>
+      <summary>Do my edits or views show up to anyone as activity?</summary>
+      <p>The app stamps each cloud write with the editing role (mom/dad/dietician) so Mayank can audit if needed, but there's no notification or "dietician edited X" feed. You can browse and edit quietly.</p>
     </details>
 
     <details class="faq">

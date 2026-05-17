@@ -157,10 +157,10 @@ if ('serviceWorker' in navigator) {
           <div>Papa</div>
           <div class="role-blurb">log meals · add notes</div>
         </button>
-        <button class="role-card ro" data-role="dietician" type="button">
+        <button class="role-card writer" data-role="dietician" type="button">
           <span class="role-emoji">🩺</span>
           <div>Dietician</div>
-          <div class="ro-tag">view only</div>
+          <div class="role-blurb">edit plan · foods</div>
         </button>
         <button class="role-card ro" data-role="family" type="button">
           <span class="role-emoji">👪</span>
@@ -398,7 +398,7 @@ if ('serviceWorker' in navigator) {
 
     <div id="accountBox" style="margin-top:18px;text-align:center">
       <div id="rolePill" class="role-pill" style="display:none"></div>
-      <div><button class="sign-out-btn" id="signOutBtn">Sign out</button></div>
+      <div><button class="sign-out-btn" id="signOutBtn" type="button">Sign out <span aria-hidden="true">→</span></button></div>
     </div>
   </section>
 </main>
@@ -2879,12 +2879,35 @@ function applyRoleToBody(role){
   window.__showLogin = () => { overlay.classList.remove('hidden'); document.body.classList.remove('signed-in'); showRoles(); };
 })();
 
-$('#signOutBtn')?.addEventListener('click', async ()=>{
-  try{
-    await window.Cloud.signOut();
-    // onAuth handler will re-open the overlay
-  }catch(err){ toast('Sign-out failed'); }
-});
+(function wireSignOut(){
+  const btn = $('#signOutBtn');
+  if(!btn) return;
+  let busy = false;
+  const doSignOut = async (e)=>{
+    if(e) e.preventDefault();
+    if(busy) return;
+    busy = true;
+    btn.disabled = true;
+    btn.textContent = 'Signing out…';
+    try{
+      await window.Cloud.signOut();
+      // onAuth handler re-opens the login overlay.
+    }catch(err){
+      console.error('signOut failed', err);
+      toast('Sign-out failed — try again');
+      btn.disabled = false;
+      btn.innerHTML = 'Sign out <span aria-hidden="true">→</span>';
+      busy = false;
+    }
+  };
+  btn.addEventListener('click', doSignOut);
+  // Belt-and-suspenders for iOS Safari where the synthetic click can be lost
+  // when scrolling momentum is still active.
+  btn.addEventListener('touchend', e=>{
+    // Only fire if the touch didn't turn into a scroll/swipe gesture.
+    if(e.cancelable) doSignOut(e);
+  }, {passive:false});
+})();
 
 /* Cloud sync: subscribe to /app/state and hydrate `state` from each snapshot.
    First snapshot:
