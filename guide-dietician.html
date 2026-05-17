@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daivik's Food Journey · Dietician's Guide 🩺</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF8F0; --cream-2:#FBEFE0; --peach:#FFD9B8;
+    --coral:#FF8E6E; --berry:#C5384B; --berry-dark:#8E1F30;
+    --olive:#5B6E3D; --olive-light:#A8B97A; --mustard:#E8B339;
+    --ink:#2B1810; --ink-soft:#4A3328;
+    --paper:#FFFCF6; --line:#E8D8C4;
+    --teal:#3F7A6E; --teal-light:#A8D0C6;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    background:var(--cream); color:var(--ink);
+    line-height:1.65;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(168,208,198,.45), transparent 50%),
+      radial-gradient(circle at 90% 100%, rgba(255,217,184,.35), transparent 50%);
+    background-attachment: fixed;
+    min-height:100vh;
+  }
+  .wrap{ max-width:740px; margin:0 auto; padding:40px 24px 80px; }
+
+  /* HERO */
+  .hero{
+    background: linear-gradient(155deg, var(--teal) 0%, #5BA395 65%, var(--teal-light) 100%);
+    border-radius:32px;padding:38px 32px 32px;color:#fff;
+    box-shadow: 0 20px 50px -20px rgba(63,122,110,.5);
+    position:relative;overflow:hidden;
+    margin-bottom:36px;
+  }
+  .hero::after{
+    content:'';position:absolute;inset:0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.22), transparent 50%);
+    pointer-events:none;
+  }
+  .hero-emoji{font-size:46px;line-height:1;display:block;margin-bottom:12px;position:relative}
+  .hero h1{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    font-size:38px;margin:0;letter-spacing:-.02em;line-height:1.1;
+    position:relative;
+  }
+  .hero .sub{
+    margin-top:12px;font-size:14px;opacity:.95;
+    letter-spacing:.04em;position:relative;line-height:1.55;
+  }
+  .hero .baby{
+    margin-top:14px;font-size:12.5px;opacity:.88;
+    position:relative;font-style:italic;
+  }
+
+  .intro{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:20px;padding:22px 24px;margin-bottom:36px;
+    font-size:15px;line-height:1.7;
+  }
+  .intro p{margin:0 0 10px}
+  .intro p:last-child{margin-bottom:0}
+  .intro strong{color:var(--teal);font-weight:700}
+
+  .section{margin-bottom:44px}
+  .section-num{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'Fraunces';font-style:italic;font-weight:600;
+    color:var(--teal);font-size:13px;letter-spacing:.15em;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .section-num .num{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--teal);color:#fff;
+    display:grid;place-items:center;font-size:14px;
+    font-family:'Fraunces';font-style:italic;font-weight:700;letter-spacing:0;
+  }
+  .section h2{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    font-size:28px;margin:0 0 18px;letter-spacing:-.02em;line-height:1.15;
+  }
+  .section h2 .accent{color:var(--teal)}
+
+  .step-card{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:18px;padding:18px 20px;margin-bottom:12px;
+    display:flex;gap:14px;align-items:flex-start;
+    box-shadow: 0 1px 0 rgba(43,24,16,.04), 0 6px 16px -10px rgba(43,24,16,.15);
+  }
+  .step-icon{
+    flex-shrink:0;width:44px;height:44px;border-radius:14px;
+    background:var(--cream-2);
+    display:grid;place-items:center;font-size:22px;
+  }
+  .step-icon.teal{background:var(--teal);color:#fff}
+  .step-icon.berry{background:var(--berry);color:#fff}
+  .step-icon.olive{background:var(--olive);color:#fff}
+  .step-icon.mustard{background:var(--mustard);color:var(--ink)}
+  .step-body{flex:1;min-width:0}
+  .step-body h3{
+    font-family:'Fraunces';font-style:italic;font-weight:500;
+    margin:0 0 4px;font-size:17px;letter-spacing:-.01em;
+  }
+  .step-body p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+  .step-body p + p{margin-top:6px}
+  .step-body strong{color:var(--ink);font-weight:700}
+  .step-body em{font-style:normal;background:var(--cream-2);padding:1px 7px;border-radius:6px;font-weight:600;color:var(--ink);font-size:12.5px}
+
+  .tip{
+    background: linear-gradient(135deg, #EAF5F2, #D4EAE3);
+    border-radius:18px;padding:16px 20px;margin:10px 0 14px;
+    border-left:4px solid var(--teal);
+    font-size:14px;line-height:1.55;
+  }
+  .tip strong{font-family:'Fraunces';font-style:italic;font-weight:600;color:var(--teal);display:block;margin-bottom:3px;font-size:14px}
+
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:480px){.features{grid-template-columns:1fr}}
+  .feature{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:16px;
+  }
+  .feature-ico{font-size:22px;margin-bottom:6px}
+  .feature h4{font-family:'Fraunces';font-style:italic;font-weight:500;margin:0 0 4px;font-size:15.5px}
+  .feature p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+  .faq{
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:14px 18px;margin-bottom:10px;
+  }
+  .faq summary{
+    font-family:'Fraunces';font-style:italic;font-weight:500;font-size:15.5px;
+    cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    color:var(--ink);
+  }
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{
+    content:'+';font-size:22px;font-weight:300;color:var(--teal);
+    transition:.2s;font-family:'Plus Jakarta Sans';font-style:normal;
+  }
+  .faq[open] summary::after{transform:rotate(45deg)}
+  .faq p{margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--ink-soft)}
+  .faq p strong{color:var(--ink);font-weight:700}
+
+  .divider{
+    text-align:center;margin:38px 0;
+    color:var(--teal-light);font-size:18px;letter-spacing:1.5em;
+  }
+
+  .dot-list{list-style:none;padding:0;margin:14px 0 0}
+  .dot-list li{
+    position:relative;padding:6px 0 6px 22px;font-size:14px;
+    border-bottom:1px dashed var(--line);
+  }
+  .dot-list li:last-child{border-bottom:none}
+  .dot-list li::before{
+    content:'';position:absolute;left:0;top:13px;
+    width:8px;height:8px;border-radius:50%;background:var(--teal);
+  }
+  .dot-list strong{color:var(--ink);font-weight:700}
+
+  .closing{
+    text-align:center;margin-top:50px;padding:28px 20px;
+    color:var(--ink-soft);
+  }
+  .closing-quote{
+    font-family:'Fraunces';font-style:italic;font-weight:400;
+    font-size:20px;color:var(--teal);margin:0 0 8px;
+    line-height:1.5;
+  }
+  .closing-signed{font-size:13px;font-style:italic}
+  .closing-heart{font-size:22px;margin-top:8px;display:block}
+
+  @media print{ body{background:#fff !important} .hero{box-shadow:none !important} }
+</style>
+</head>
+<body style="visibility:hidden">
+
+<!-- Auth gate: dietician role only -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDaqo8lcbFVQB-sCmyMY--XJhGI1crwhsw",
+  authDomain: "daivik-meal-plan.firebaseapp.com",
+  projectId: "daivik-meal-plan",
+  storageBucket: "daivik-meal-plan.firebasestorage.app",
+  messagingSenderId: "197581914517",
+  appId: "1:197581914517:web:298337cfe85ab6358ff69c"
+};
+const ALLOWED = new Set(['dietician@daivik.app']);
+const REROUTE = {
+  'mom@daivik.app':    'guide.html',
+  'dad@daivik.app':    'guide.html',
+  'family@daivik.app': 'guide-family.html'
+};
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth, user=>{
+  const email = user && user.email ? user.email.toLowerCase() : null;
+  if(email && ALLOWED.has(email)){ document.body.style.visibility = ''; return; }
+  if(email && REROUTE[email]){ window.location.replace(REROUTE[email]); return; }
+  window.location.replace('index.html');
+});
+</script>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="hero-emoji">🩺</span>
+    <h1>For our dietician<br/>— a quick orientation</h1>
+    <div class="sub">A shared, real-time view of how Daivik is actually eating this week — meals, moods, reactions, growth.</div>
+    <div class="baby">Daivik · born 6 Oct 2025 · started solids 4 April 2026</div>
+  </div>
+
+  <div class="intro">
+    <p>Thank you for using this app with us 💚 We built it so you can see <strong>exactly what's happening on the ground</strong> between consultations — without us having to remember every detail on a call.</p>
+    <p>You have <strong>view-only access</strong> across every screen. Everything Mama and Papa log shows up here in real time, usually within a second. You can't accidentally edit anything — the app simply hides the edit buttons for you.</p>
+    <p>This guide takes 3 minutes. Sections 2 and 3 are the most useful — they show you where to find the data points you actually care about.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">1</span> Getting in</div>
+    <h2>Signing in <span class="accent">& staying signed in</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon teal">📱</div>
+      <div class="step-body">
+        <h3>Where to find it</h3>
+        <p>Open <em>mealplan.mayankkariya.com</em> in your browser. On the welcome screen, tap the <strong>🩺 Dietician</strong> card and enter the 4-digit PIN we shared with you.</p>
+        <p>You stay signed in until you sign out — works on phone, tablet, laptop. Add it to your home screen for a one-tap launch (browser menu → "Add to Home Screen").</p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Privacy note</strong>
+      Your sign-in is yours alone — Mama and Papa each have their own account, as do other family members. Anything you "view" is not visible to them as activity. The PIN is shareable only if you decide to share it.
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">2</span> What you can see</div>
+    <h2>The five tabs, <span class="accent">at a glance</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon">🏠</div>
+      <div class="step-body">
+        <h3>Today</h3>
+        <p>What Daivik is supposed to eat today, with a tick next to each meal that's been fed. Has a <strong>"foods tried"</strong> counter and a <strong>"this week"</strong> completion %. At the top, any <strong>auto-flagged allergens</strong> appear as a soft red banner.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon teal">📅</div>
+      <div class="step-body">
+        <h3>Plan</h3>
+        <p>The full week-by-week plan as it was given to Mama. Each day is expandable — open any day to see <strong>quantity fed</strong>, <strong>mood</strong>, any <strong>reactions noted</strong>, <strong>photos</strong> of the actual meal, and <strong>parent notes</strong>. Past weeks are preserved, so you can audit any historical day.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon olive">🥬</div>
+      <div class="step-body">
+        <h3>Foods</h3>
+        <p>The master list of vegetables, dals, and fruits. Items Daivik has <strong>tried</strong> get marked green. Items with reactions get the <strong>⚠ flagged</strong> badge with a red border — so you instantly see what to avoid suggesting next week.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon berry">📊</div>
+      <div class="step-body">
+        <h3>Insights</h3>
+        <p>The most useful tab for our consultations. Six charts:</p>
+        <ul class="dot-list">
+          <li><strong>Weekly completion</strong> — % of planned meals actually fed</li>
+          <li><strong>Food variety</strong> — count of distinct vege/dal/fruit tried</li>
+          <li><strong>Mood pattern</strong> — Loved / Okay / Fussy / Refused distribution</li>
+          <li><strong>Growth over time</strong> — weight and length plotted against age</li>
+          <li><strong>Recent reactions noted</strong> — chronological list of any reaction logged</li>
+          <li><strong>Streak</strong> — consecutive days logged (mostly emotional, not clinical)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon mustard">👶</div>
+      <div class="step-body">
+        <h3>Profile</h3>
+        <p>Daivik's photo, age, full <strong>growth log</strong> (every weight/length entry, with notes), reminders, RDA references (6–12m), and the milestones checklist. Use this when you want to see the actual numbers behind the growth chart.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">3</span> What to look for</div>
+    <h2>The data points <span class="accent">that matter</span></h2>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-ico">⚠️</div>
+        <h4>Auto-flagged foods</h4>
+        <p>If a reaction is logged twice on the same food, the app auto-flags it. Look at the Today banner or the Foods tab to see the current list.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">😣</div>
+        <h4>Refused / Fussy streaks</h4>
+        <p>Insights → Mood pattern. A spike in Refused/Fussy in one week usually means a texture or quantity issue.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">📏</div>
+        <h4>Growth trajectory</h4>
+        <p>Insights → Growth chart. Compare against the trajectory; if it dips below his trend line for &gt;2 weeks, worth flagging.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">🥬</div>
+        <h4>Diet diversity</h4>
+        <p>Foods → tried items. Aim is 5+ of 8 food groups daily by week 7. The tab makes this visible.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">📸</div>
+        <h4>Photos of meals</h4>
+        <p>Inside any expanded meal — photos show the actual texture and portion. Useful when "mashed" or "thick paste" is ambiguous.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">📝</div>
+        <h4>Parent notes</h4>
+        <p>Often the richest signal — "grabbed the spoon", "gagged on the seeds", "refused after 2 tsp". Worth scanning the past week before each call.</p>
+      </div>
+    </div>
+
+    <div class="tip" style="margin-top:18px">
+      <strong>🧠 A useful rhythm</strong>
+      Before our weekly call, glance at: Today banner → Insights → Recent reactions → Growth chart → past 7 days in Plan. Total: ~3 minutes. Everything else is detail you can drill into if something looks off.
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">4</span> Sending the next week</div>
+    <h2>How <span class="accent">new plans land</span></h2>
+
+    <div class="step-card">
+      <div class="step-icon teal">📤</div>
+      <div class="step-body">
+        <h3>The way it works today</h3>
+        <p>You send Mama the next week's plan as an <strong>Excel sheet</strong> on WhatsApp, just like before. She imports it with one tap from the app and the new week shows up here for you to see too.</p>
+        <p>Format that works best: one sheet per week named <em>"Week 8"</em>, <em>"Week 9"</em>, etc. Columns: Day, Time, Food, Notes. The app handles parsing automatically.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-icon olive">📥</div>
+      <div class="step-body">
+        <h3>If you want a weekly digest</h3>
+        <p>Mama has a <em>📤 Share</em> button that builds a clean text summary of the last 7 days — meals, moods, reactions, growth — and sends it via WhatsApp or email. Ask her to use it before each consult if you'd like everything in one message.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <div class="section">
+    <div class="section-num"><span class="num">5</span> Common questions</div>
+    <h2>If you <span class="accent">wonder</span></h2>
+
+    <details class="faq">
+      <summary>Can I edit anything?</summary>
+      <p>No — the dietician account is intentionally view-only. If you want a change made (a flag corrected, a wrong log fixed), just tell Mama or Papa and they'll do it.</p>
+    </details>
+
+    <details class="faq">
+      <summary>How real-time is the sync?</summary>
+      <p>About 1 second. When Mama marks a meal fed, it updates on your screen within a moment. No refresh needed.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What if I see a worrying reaction?</summary>
+      <p>The app auto-flags repeated reactions, but obviously call/message Mama directly if you see something serious in the Recent reactions list. The app is a record, not an alert system.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Can I see what Daivik ate 4 weeks ago?</summary>
+      <p>Yes — the Plan tab keeps every past week. Use the week selector (top of the Plan tab) to jump back.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Do my views show up to anyone?</summary>
+      <p>No. There's no activity tracking — you can browse freely.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What if I forget the PIN?</summary>
+      <p>Ask Mayank — he can reset it for you in a minute.</p>
+    </details>
+  </div>
+
+  <div class="closing">
+    <p class="closing-quote">"Thank you for shaping his first year of food with us."</p>
+    <p class="closing-signed">— Mayank &amp; family</p>
+    <span class="closing-heart">🩺🌱💚</span>
+  </div>
+
+</div>
+
+</body>
+</html>
