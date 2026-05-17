@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#FFF8F0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Daivik" />
+<meta name="application-name" content="Daivik" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
 <title>Daivik's Food Journey 🌱</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,6 +100,16 @@ window.Cloud = {
   serverTimestamp
 };
 window.dispatchEvent(new Event('cloud-ready'));
+
+/* Register the service worker for offline-ish PWA install. Soft-fails if the
+   browser doesn't support SW (every modern one does). */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => {
+      console.warn('SW register failed', err);
+    });
+  });
+}
 </script>
 <style>
   :root{
@@ -463,12 +479,14 @@ window.dispatchEvent(new Event('cloud-ready'));
     font-size:20px;color:var(--ink-soft);
   }
 
-  /* Meal CRUD actions (writer-only, hidden via [data-write] for readers) */
+  /* Meal CRUD actions — visible to planners (mom/dad/dietician) only,
+     and only when the meal card is expanded. */
   .meal-actions{
-    display:flex;gap:6px;flex-wrap:wrap;
+    display:none;gap:6px;flex-wrap:wrap;
     margin:10px 0 4px;padding-top:10px;
     border-top:1px dashed var(--line);
   }
+  .meal.expanded .meal-actions{display:flex;animation:fadeUp .2s}
   .meal-act{
     flex:1;min-width:80px;
     appearance:none;background:var(--paper);border:1px solid var(--line);
@@ -777,10 +795,15 @@ window.dispatchEvent(new Event('cloud-ready'));
       radial-gradient(900px 600px at 10% -10%, rgba(255,217,184,.85), transparent 60%),
       radial-gradient(900px 700px at 90% 110%, rgba(168,185,122,.45), transparent 60%),
       radial-gradient(500px 400px at 50% 50%, rgba(255,142,110,.10), transparent 70%);
+    /* Scroll on tall content (small phones) — center is best-effort with min-height. */
     display:flex;align-items:center;justify-content:center;
     padding:24px 18px;
     animation: fadeUp .35s;
-    overflow:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  @media (max-width:420px){
+    .login-overlay{ align-items:flex-start; padding:18px 14px 30px; }
   }
   .login-overlay.hidden{display:none}
   body:not(.signed-in) > *:not(.login-overlay):not(.toast){visibility:hidden}
@@ -1013,33 +1036,81 @@ window.dispatchEvent(new Event('cloud-ready'));
   }
   .login-foot{margin-top:14px;font-size:11px;color:var(--ink-soft)}
 
-  /* Role gating — readers can't see write controls */
+  /* Role gating
+     ─────────────────────────────────────────────────────────────────────────
+     [data-write] : Mom & Dad only (daily logging, profile, growth, reminders,
+                    reset/export/import — anything operational or personal).
+     [data-plan]  : Mom, Dad, *and* Dietician (planning the meal schedule,
+                    managing the food master list, importing weeks).
+     Family role : view-only — everything hidden.
+     ───────────────────────────────────────────────────────────────────────── */
+
+  /* Family: read-only across the board */
+  body[data-role="family"] [data-write],
+  body[data-role="family"] [data-plan],
+  body[data-role="family"] .fab-group,
+  body[data-role="family"] .danger-zone,
+  body[data-role="family"] #enableNotifs,
+  body[data-role="family"] .fed-toggle,
+  body[data-role="family"] .meal-fields,
+  body[data-role="family"] .meal-actions,
+  body[data-role="family"] .add-meal-btn,
+  body[data-role="family"] .photo-add,
+  body[data-role="family"] .photo-thumb .rm,
+  body[data-role="family"] .growth-entry .rm,
+  body[data-role="family"] .today-meal-actions,
+  body[data-role="family"] .food-add-row { display:none !important; }
+  body[data-role="family"] #profilePhotoWrap { pointer-events:none; cursor:default; }
+  body[data-role="family"] .food-item       { pointer-events:none; }
+
+  /* Dietician: no daily logging or clinical/parent stuff,
+     but full plan + food-list authoring. */
   body[data-role="dietician"] [data-write],
-  body[data-role="family"]    [data-write],
-  body[data-role="dietician"] .fab-group,
-  body[data-role="family"]    .fab-group,
   body[data-role="dietician"] .danger-zone,
-  body[data-role="family"]    .danger-zone,
   body[data-role="dietician"] #enableNotifs,
-  body[data-role="family"]    #enableNotifs,
   body[data-role="dietician"] .fed-toggle,
-  body[data-role="family"]    .fed-toggle,
   body[data-role="dietician"] .meal-fields,
-  body[data-role="family"]    .meal-fields,
-  body[data-role="dietician"] .photo-add,
-  body[data-role="family"]    .photo-add,
   body[data-role="dietician"] .photo-thumb .rm,
-  body[data-role="family"]    .photo-thumb .rm,
   body[data-role="dietician"] .growth-entry .rm,
-  body[data-role="family"]    .growth-entry .rm {
-    display:none !important;
+  body[data-role="dietician"] .today-meal-actions { display:none !important; }
+  body[data-role="dietician"] #profilePhotoWrap { pointer-events:none; cursor:default; }
+
+  /* Custom food add row (planner-only, hidden from family by .food-add-row above) */
+  .food-add-row{
+    display:flex;gap:8px;margin:8px 0 4px;align-items:stretch;flex-wrap:wrap;
   }
-  body[data-role="dietician"] .today-meal-actions,
-  body[data-role="family"]    .today-meal-actions {
-    display:none !important;
+  @media (max-width:420px){
+    .food-add-row select{ max-width:100%; flex:1 1 100%; }
+    .food-add-row input { flex:1 1 calc(100% - 80px); }
   }
-  body[data-role="dietician"] #profilePhotoWrap,
-  body[data-role="family"]    #profilePhotoWrap { pointer-events:none; cursor:default; }
+  .food-add-row select{
+    flex-shrink:0;font:inherit;font-size:12px;
+    padding:8px 10px;border-radius:10px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    max-width:46%;
+  }
+  .food-add-row input{
+    flex:1;font:inherit;font-size:13px;
+    padding:8px 11px;border-radius:10px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    min-width:0;
+  }
+  .food-add-row button{
+    flex-shrink:0;
+    background:var(--ink);color:var(--cream);border:none;
+    font:inherit;font-weight:700;font-size:12px;
+    padding:8px 14px;border-radius:10px;cursor:pointer;
+  }
+  .food-add-row button:active{transform:scale(.97)}
+  .food-item.custom{position:relative;border-style:dashed}
+  .food-item.custom .rmf{
+    appearance:none;background:transparent;border:none;
+    color:var(--berry);font-size:14px;font-weight:700;cursor:pointer;
+    margin-left:6px;line-height:1;padding:2px 4px;
+  }
+  body[data-role="family"]    .food-item.custom .rmf,
+  body[data-role="dietician"] .food-item.custom .rmf { /* dietician CAN delete custom foods */ }
+  body[data-role="family"]    .food-item.custom .rmf { display:none !important; }
   .sign-out-btn{
     margin-top:10px;background:none;border:1px solid var(--line);
     color:var(--ink-soft);font:inherit;font-size:12px;font-weight:600;
@@ -1689,6 +1760,10 @@ function defaultState(){
     logs: {},
     foods: {vege:{}, dal:{}, fruit:{}},
     flaggedFoods: {vege:{}, dal:{}, fruit:{}}, // {category:{itemName: true}}
+    /* Custom food items added by planners (Mom/Dad/Dietician). Each category
+       holds an array of {item, section} objects. The Foods view merges these
+       into the corresponding section of the seed list at render time. */
+    customFoods: {vege:[], dal:[], fruit:[]},
     growth: [
       {date:'2026-03-23', weight:7.8, length:69, head:null, notes:'Initial measurements'}
     ],
@@ -1708,6 +1783,7 @@ function mergeWithDefaults(s){
     ...s,
     foods:        {...d.foods,        ...(s.foods||{})},
     flaggedFoods: {...d.flaggedFoods, ...(s.flaggedFoods||{})},
+    customFoods:  {...d.customFoods,  ...(s.customFoods||{})},
     reminders:    {...d.reminders,    ...(s.reminders||{})}
   };
 }
@@ -1729,10 +1805,14 @@ let __lastWrittenRev = 0;
 let __cloudReady = false;          // true once first snapshot has been applied
 let __currentRole = null;          // set by auth handler
 function __isWriter(){ return __currentRole === 'mom' || __currentRole === 'dad'; }
+// "Planner" = can author the meal plan & food list. Mom, Dad, and Dietician.
+// Family stays view-only. This is enforced again in the Firestore rules.
+function __isPlanner(){ return __isWriter() || __currentRole === 'dietician'; }
 
 function saveState(){
-  // Read-only roles: no-op (rules also block, but this avoids noisy attempts).
-  if(!__isWriter()) return;
+  // Read-only roles (family) no-op. Mom/Dad/Dietician all push to Firestore;
+  // rules are the real gate.
+  if(!__isPlanner()) return;
   // Pre-cloud: don't write before the first snapshot arrives — we'd clobber
   // remote data with the local default state.
   if(!__cloudReady) return;
@@ -2249,7 +2329,7 @@ function reopenMeal(weekId, dayN, slotIdx){
    ============================================================ */
 let __editContext = null; // {weekId, dayN, slotIdx} | {weekId, dayN, slotIdx:null} for new
 function openEditMeal(weekId, dayN, slotIdx){
-  if(!__isWriter()) return;
+  if(!__isPlanner()) return;
   const {day} = findDay(weekId, dayN);
   if(!day) return;
   const isNew = slotIdx == null;
@@ -2268,7 +2348,7 @@ $('#editMealBackdrop').addEventListener('click', e=>{
   if(e.target.id === 'editMealBackdrop') $('#editMealBackdrop').classList.remove('show');
 });
 $('#saveEditMeal').addEventListener('click', ()=>{
-  if(!__isWriter() || !__editContext) return;
+  if(!__isPlanner() || !__editContext) return;
   const time = $('#editMealTime').value;
   const food = $('#editMealFood').value.trim();
   const notes = $('#editMealNotes').value.trim();
@@ -2299,7 +2379,7 @@ $('#saveEditMeal').addEventListener('click', ()=>{
 let __moveContext = null;        // source slot ref
 let __moveTargetWeekId = null;   // currently shown target week in the picker
 function openMoveMeal(weekId, dayN, slotIdx){
-  if(!__isWriter()) return;
+  if(!__isPlanner()) return;
   const {day} = findDay(weekId, dayN);
   if(!day || !day.slots[slotIdx]) return;
   __moveContext = {weekId, dayN, slotIdx};
@@ -2414,7 +2494,7 @@ function renderPlan(){
       </div>
       <div class="day-body">
         ${day.slots.map((s,si)=> renderMeal(week.id, day.n, si, s)).join('')}
-        <button class="add-meal-btn" type="button" data-write data-add-meal data-week="${week.id}" data-day="${day.n}">+ Add a meal to this day</button>
+        <button class="add-meal-btn" type="button" data-plan data-add-meal data-week="${week.id}" data-day="${day.n}">+ Add a meal to this day</button>
       </div>
     `;
     card.querySelector('.day-header').addEventListener('click', ()=> card.classList.toggle('open'));
@@ -2477,11 +2557,14 @@ function renderMeal(weekId, dayN, slotIdx, slot){
             <button class="small-btn f-voice" type="button">🎙 Voice note</button>
           </div>
         </div>
-        <div class="meal-actions" data-write>
-          <button class="meal-act" type="button" data-meal-act="edit">✏️ Edit meal</button>
-          <button class="meal-act" type="button" data-meal-act="move">↪ Move</button>
-          <button class="meal-act danger" type="button" data-meal-act="delete">🗑 Delete</button>
-        </div>
+      </div>
+      <!-- Plan-editing actions live OUTSIDE .meal-fields so Dietician can see
+           them too (Dietician's .meal-fields is hidden, but they can still edit
+           the plan itself). -->
+      <div class="meal-actions" data-plan>
+        <button class="meal-act" type="button" data-meal-act="edit">✏️ Edit meal</button>
+        <button class="meal-act" type="button" data-meal-act="move">↪ Move</button>
+        <button class="meal-act danger" type="button" data-meal-act="delete">🗑 Delete</button>
       </div>
     </div>
   `;
@@ -2603,11 +2686,11 @@ function wireMeals(){
       });
     }
 
-    // Edit / Move / Delete actions (writer-only — CSS also hides for readers)
+    // Edit / Move / Delete actions (planner-only — CSS also hides for family)
     m.querySelectorAll('[data-meal-act]').forEach(btn=>{
       btn.addEventListener('click', e=>{
         e.stopPropagation();
-        if(!__isWriter()) return;
+        if(!__isPlanner()) return;
         const action = btn.dataset.mealAct;
         if(action === 'edit'){
           openEditMeal(weekId, dayN, si);
@@ -2627,11 +2710,11 @@ function wireMeals(){
     });
   });
 
-  // "+ Add a meal" buttons — one per day
+  // "+ Add a meal" buttons — one per day (planner-only)
   $$('[data-add-meal]').forEach(btn=>{
     btn.addEventListener('click', e=>{
       e.stopPropagation();
-      if(!__isWriter()) return;
+      if(!__isPlanner()) return;
       const weekId = btn.dataset.week;
       const dayN = +btn.dataset.day;
       openEditMeal(weekId, dayN, null);
@@ -2710,34 +2793,120 @@ $('#recipeBackdrop').addEventListener('click', e=>{ if(e.target.id==='recipeBack
 /* ============================================================
    FOODS LIST
    ============================================================ */
-function renderFoods(){
-  const map = {vege:VEGE_LIST, dal:DAL_LIST, fruit:FRUIT_LIST};
-  Object.entries(map).forEach(([key, groups])=>{
-    const root = $('#foods-'+key);
-    root.innerHTML = groups.map(g=>`
-      <div class="food-group">
-        <h4 class="food-group-title">${escapeHtml(g.section)}</h4>
-        <div class="food-group-sub">${g.items.length} items</div>
-        <div class="food-grid">
-          ${g.items.map(item=>{
-            const tried = state.foods[key][item];
-            const flagged = state.flaggedFoods[key]?.[item];
-            return `<div class="food-item ${tried?'tried':''} ${flagged?'flagged':''}" data-cat="${key}" data-item="${escapeHtml(item)}">
-              <span>${escapeHtml(item)}${flagged?' ⚠':''}</span>
-              <span class="tick">${tried?'✓':''}</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    `).join('');
+/* Build, for one category, an ordered list of {section, items, customItems}.
+   Custom items appear under their picked section (or "Custom additions" if
+   the picked section no longer exists). */
+function getFoodSectionsFor(cat){
+  const seed = cat==='vege'?VEGE_LIST: cat==='dal'?DAL_LIST: FRUIT_LIST;
+  const customForCat = (state.customFoods?.[cat]) || [];
+  const byKey = new Map();
+  seed.forEach(g=>{
+    byKey.set(g.section, {section:g.section, items:[...g.items], customItems:[]});
+  });
+  customForCat.forEach(c=>{
+    const target = byKey.get(c.section) || (function(){
+      const tail = {section: c.section || 'Custom additions', items:[], customItems:[]};
+      byKey.set(tail.section, tail);
+      return tail;
+    })();
+    target.customItems.push(c.item);
+  });
+  return [...byKey.values()];
+}
 
+function renderFoods(){
+  const cats = ['vege','dal','fruit'];
+  cats.forEach(cat=>{
+    const root = $('#foods-'+cat);
+    const sections = getFoodSectionsFor(cat);
+    const seed = cat==='vege'?VEGE_LIST: cat==='dal'?DAL_LIST: FRUIT_LIST;
+    const sectionOptions = seed.map(g=>`<option value="${escapeHtml(g.section)}">${escapeHtml(g.section)}</option>`).join('');
+
+    root.innerHTML = `
+      <div class="food-add-row" data-plan data-cat="${cat}">
+        <select class="food-add-section" aria-label="Section">${sectionOptions}</select>
+        <input class="food-add-input" type="text" placeholder="Add a new ${cat==='vege'?'vegetable':cat==='dal'?'dal/pulse':'fruit'}…" />
+        <button class="food-add-btn" type="button">+ Add</button>
+      </div>
+      ${sections.map(g=>`
+        <div class="food-group">
+          <h4 class="food-group-title">${escapeHtml(g.section)}</h4>
+          <div class="food-group-sub">${g.items.length + g.customItems.length} items</div>
+          <div class="food-grid">
+            ${[
+              ...g.items.map(item=>{
+                const tried = state.foods[cat][item];
+                const flagged = state.flaggedFoods[cat]?.[item];
+                return `<div class="food-item ${tried?'tried':''} ${flagged?'flagged':''}" data-cat="${cat}" data-item="${escapeHtml(item)}">
+                  <span>${escapeHtml(item)}${flagged?' ⚠':''}</span>
+                  <span class="tick">${tried?'✓':''}</span>
+                </div>`;
+              }),
+              ...g.customItems.map(item=>{
+                const tried = state.foods[cat][item];
+                const flagged = state.flaggedFoods[cat]?.[item];
+                return `<div class="food-item custom ${tried?'tried':''} ${flagged?'flagged':''}" data-cat="${cat}" data-item="${escapeHtml(item)}" data-custom="1">
+                  <span>${escapeHtml(item)}${flagged?' ⚠':''}</span>
+                  <span><span class="tick">${tried?'✓':''}</span><button class="rmf" type="button" data-rm-food title="Remove">✕</button></span>
+                </div>`;
+              })
+            ].join('')}
+          </div>
+        </div>
+      `).join('')}
+    `;
+
+    // Add-food row handler
+    const addRow = root.querySelector('.food-add-row');
+    if(addRow){
+      const input = addRow.querySelector('.food-add-input');
+      const submit = ()=>{
+        if(!__isPlanner()){ toast('Only Mom, Dad, or Dietician can add foods'); return; }
+        const name = input.value.trim();
+        if(!name) return;
+        const section = addRow.querySelector('.food-add-section').value;
+        const seedSection = seed.find(g=>g.section===section);
+        const exists =
+          (seedSection?.items || []).some(i=> i.toLowerCase()===name.toLowerCase()) ||
+          (state.customFoods?.[cat] || []).some(c=> c.item.toLowerCase()===name.toLowerCase());
+        if(exists){ toast(`"${name}" is already in the list`); return; }
+        state.customFoods ||= {vege:[], dal:[], fruit:[]};
+        state.customFoods[cat] ||= [];
+        state.customFoods[cat].push({item: name, section});
+        saveState();
+        renderFoods();
+        toast(`✨ Added ${name}`);
+      };
+      addRow.querySelector('.food-add-btn').addEventListener('click', submit);
+      input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+    }
+
+    // Remove custom food
+    root.querySelectorAll('[data-rm-food]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        if(!__isPlanner()) return;
+        const fi = btn.closest('.food-item');
+        const item = fi.dataset.item;
+        if(!confirm(`Remove "${item}" from the ${cat} list?`)) return;
+        state.customFoods[cat] = (state.customFoods?.[cat] || []).filter(c=> c.item !== item);
+        // Also clear any tried/flagged state for that name to keep things tidy
+        if(state.foods[cat]) delete state.foods[cat][item];
+        if(state.flaggedFoods[cat]) delete state.flaggedFoods[cat][item];
+        saveState();
+        renderFoods();
+        toast('Removed');
+      });
+    });
+
+    // Food item: tap to toggle tried; long-press to toggle flag
     root.querySelectorAll('.food-item').forEach(el=>{
       let pressTimer;
       const cat = el.dataset.cat, item = el.dataset.item;
-
       const startPress = ()=>{
         pressTimer = setTimeout(()=>{
-          // long-press: toggle flag
+          if(!__isPlanner() && !__isWriter()){ pressTimer = null; return; }
+          state.flaggedFoods[cat] ||= {};
           state.flaggedFoods[cat][item] = !state.flaggedFoods[cat][item];
           el.classList.toggle('flagged', state.flaggedFoods[cat][item]);
           saveState();
@@ -2746,16 +2915,16 @@ function renderFoods(){
         }, 600);
       };
       const cancelPress = ()=> clearTimeout(pressTimer);
-
       el.addEventListener('touchstart', startPress, {passive:true});
       el.addEventListener('mousedown', startPress);
       el.addEventListener('touchend', cancelPress);
       el.addEventListener('mouseup', cancelPress);
       el.addEventListener('mouseleave', cancelPress);
       el.addEventListener('touchmove', cancelPress, {passive:true});
-
       el.addEventListener('click', e=>{
+        if(e.target.closest('[data-rm-food]')) return; // delete button handled separately
         if(pressTimer === 'long'){ pressTimer = null; return; }
+        if(!__isWriter()) return; // only Mom/Dad mark foods as "tried"
         state.foods[cat][item] = !state.foods[cat][item];
         el.classList.toggle('tried');
         el.querySelector('.tick').textContent = state.foods[cat][item]?'✓':'';
@@ -3007,6 +3176,7 @@ document.addEventListener('click', e=>{
 $('#importExcelBtn').addEventListener('click', e=>{
   e.stopPropagation();
   fabGroup.classList.remove('open');
+  if(!__isPlanner()){ toast('Only Mom, Dad, or Dietician can import'); return; }
   $('#excelInput').click();
 });
 $('#exportExcelBtn').addEventListener('click', e=>{
@@ -3017,6 +3187,7 @@ $('#exportExcelBtn').addEventListener('click', e=>{
 $('#addBlankWeekBtn').addEventListener('click', e=>{
   e.stopPropagation();
   fabGroup.classList.remove('open');
+  if(!__isPlanner()){ toast('Only Mom, Dad, or Dietician can add a week'); return; }
   openModal();
 });
 
@@ -3781,6 +3952,24 @@ function renderAll(){
   loadPhoto();
   checkNotifPerm();
   detectAllergies();
+  cacheLoginStats();
+}
+
+/* Snapshot the headline numbers to localStorage so the next page load
+   (before sign-in) can show them on the login overlay. Per-device cache. */
+function cacheLoginStats(){
+  try{
+    const weeks = state.weeks.length;
+    const days  = state.weeks.reduce((n,w)=> n + (w.days?.length || 0), 0);
+    // Distinct food count: seed master lists + any custom items the family added
+    const seedCount =
+      VEGE_LIST.reduce((n,s)=> n + s.items.length, 0) +
+      DAL_LIST.reduce((n,s)=> n + s.items.length, 0) +
+      FRUIT_LIST.reduce((n,s)=> n + s.items.length, 0);
+    const customCount = ['vege','dal','fruit'].reduce((n,c)=> n + (state.customFoods?.[c]?.length || 0), 0);
+    const foods = seedCount + customCount;
+    localStorage.setItem('daivik-stats-cache', JSON.stringify({weeks, days, foods}));
+  }catch(e){}
 }
 
 function applyRoleToBody(role){
@@ -3810,18 +3999,23 @@ function applyRoleToBody(role){
     }
   } catch(e){}
 
-  // Stats strip
+  // Stats strip — read the latest cached values (refreshed on each render),
+  // fall back to SEED defaults on a first-ever visit.
   try {
-    const weeks = SEED_WEEKS.length;
-    const totalDays = SEED_WEEKS.reduce((n,w)=> n + (w.days?.length || 0), 0);
-    const totalFoods =
-      (VEGE_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
-      (DAL_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
-      (FRUIT_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0);
+    const cached = (function(){
+      try { return JSON.parse(localStorage.getItem('daivik-stats-cache') || 'null'); }
+      catch { return null; }
+    })();
+    const weeks = (cached && cached.weeks)  || SEED_WEEKS.length;
+    const days  = (cached && cached.days)   || SEED_WEEKS.reduce((n,w)=> n + (w.days?.length || 0), 0);
+    const foods = (cached && cached.foods)  ||
+      ((VEGE_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
+       (DAL_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
+       (FRUIT_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0));
     const elW = $('#lsWeeks'), elD = $('#lsDays'), elF = $('#lsFoods');
     if(elW) elW.textContent = weeks;
-    if(elD) elD.textContent = totalDays;
-    if(elF) elF.textContent = totalFoods + '+';
+    if(elD) elD.textContent = days;
+    if(elF) elF.textContent = foods + '+';
   } catch(e){}
 })();
 
@@ -3916,9 +4110,10 @@ async function initCloudSync(){
   if(__unsubState) __unsubState();
   __unsubState = window.Cloud.subscribeState(snap=>{
     if(!snap.exists()){
-      if(__isWriter() && !__cloudReady){
-        // One-time bootstrap (writer): migrate local data if any, otherwise seed defaults
-        const legacy = readLegacyLocalState();
+      if(__isPlanner() && !__cloudReady){
+        // One-time bootstrap. Legacy localStorage migration is writer-only
+        // (it's Mom's old data on Mom's device); dietician just seeds defaults.
+        const legacy = __isWriter() ? readLegacyLocalState() : null;
         const seeded = legacy || defaultState();
         // Drop legacy inline base64 meal photos (per migration policy)
         if(seeded.logs){

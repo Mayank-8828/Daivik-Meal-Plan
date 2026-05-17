@@ -9,9 +9,15 @@ service cloud.firestore {
     function emailOf() {
       return request.auth.token.email;
     }
+    // Mom, Dad, and the Dietician can author the meal plan and food list.
+    // Family is read-only. UI separately gates Dietician away from the daily
+    // logging actions (mark fed, photos, mood, reactions, growth, profile).
     function isWriter() {
-      return isSignedIn() &&
-        (emailOf() == 'mom@daivik.app' || emailOf() == 'dad@daivik.app');
+      return isSignedIn() && (
+        emailOf() == 'mom@daivik.app' ||
+        emailOf() == 'dad@daivik.app' ||
+        emailOf() == 'dietician@daivik.app'
+      );
     }
     function isReader() {
       return isSignedIn() && (

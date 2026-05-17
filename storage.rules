@@ -9,6 +9,10 @@ service firebase.storage {
     function emailOf() {
       return request.auth.token.email;
     }
+    // For Storage we keep the writer set narrower than Firestore: only
+    // Mom and Dad upload photos (meal photos are logging artefacts, and
+    // the profile photo is a parent-managed asset). Dietician edits the
+    // plan but doesn't upload media.
     function isWriter() {
       return isSignedIn() &&
         (emailOf() == 'mom@daivik.app' || emailOf() == 'dad@daivik.app');
