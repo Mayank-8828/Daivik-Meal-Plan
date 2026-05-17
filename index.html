@@ -932,33 +932,6 @@ if ('serviceWorker' in navigator) {
     50%   {box-shadow:0 0 0 7px rgba(168,185,122,0)}
   }
 
-  /* Stats strip — 3 little metrics under the tagline */
-  .login-stats{
-    display:flex;justify-content:center;gap:0;
-    margin:14px 0 4px;
-    background:rgba(255,255,255,.55);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:8px 0;
-    backdrop-filter: blur(4px);
-  }
-  .login-stat{
-    flex:1;text-align:center;padding:2px 6px;
-    position:relative;
-  }
-  .login-stat + .login-stat::before{
-    content:'';position:absolute;left:0;top:18%;bottom:18%;
-    width:1px;background:var(--line);
-  }
-  .login-stat .num{
-    display:block;font-family:'Fraunces';font-style:italic;font-weight:700;
-    font-size:22px;color:var(--berry);line-height:1;
-  }
-  .login-stat .lbl{
-    display:block;margin-top:3px;
-    font-size:9.5px;color:var(--ink-soft);
-    letter-spacing:.08em;text-transform:uppercase;font-weight:700;
-  }
 
   .login-body{ padding: 4px 22px 0 }
   .login-sub{
@@ -1149,11 +1122,6 @@ if ('serviceWorker' in navigator) {
       <h2 class="login-title">Daivik's <span class="accent">Food Journey</span></h2>
       <p class="login-tag">A shared little diary for everyone who feeds and loves him 💛</p>
       <p class="login-tag-2">From <strong>first solids</strong> to <strong>family meals</strong> — every veggie tried, every mood, every milestone, in one warm place.</p>
-      <div class="login-stats" id="loginStats">
-        <div class="login-stat"><span class="num" id="lsWeeks">7</span><span class="lbl">weeks planned</span></div>
-        <div class="login-stat"><span class="num" id="lsDays">51</span><span class="lbl">days of meals</span></div>
-        <div class="login-stat"><span class="num" id="lsFoods">60+</span><span class="lbl">foods to try</span></div>
-      </div>
     </div>
 
     <div class="login-body">
@@ -3952,24 +3920,6 @@ function renderAll(){
   loadPhoto();
   checkNotifPerm();
   detectAllergies();
-  cacheLoginStats();
-}
-
-/* Snapshot the headline numbers to localStorage so the next page load
-   (before sign-in) can show them on the login overlay. Per-device cache. */
-function cacheLoginStats(){
-  try{
-    const weeks = state.weeks.length;
-    const days  = state.weeks.reduce((n,w)=> n + (w.days?.length || 0), 0);
-    // Distinct food count: seed master lists + any custom items the family added
-    const seedCount =
-      VEGE_LIST.reduce((n,s)=> n + s.items.length, 0) +
-      DAL_LIST.reduce((n,s)=> n + s.items.length, 0) +
-      FRUIT_LIST.reduce((n,s)=> n + s.items.length, 0);
-    const customCount = ['vege','dal','fruit'].reduce((n,c)=> n + (state.customFoods?.[c]?.length || 0), 0);
-    const foods = seedCount + customCount;
-    localStorage.setItem('daivik-stats-cache', JSON.stringify({weeks, days, foods}));
-  }catch(e){}
 }
 
 function applyRoleToBody(role){
@@ -3999,24 +3949,6 @@ function applyRoleToBody(role){
     }
   } catch(e){}
 
-  // Stats strip — read the latest cached values (refreshed on each render),
-  // fall back to SEED defaults on a first-ever visit.
-  try {
-    const cached = (function(){
-      try { return JSON.parse(localStorage.getItem('daivik-stats-cache') || 'null'); }
-      catch { return null; }
-    })();
-    const weeks = (cached && cached.weeks)  || SEED_WEEKS.length;
-    const days  = (cached && cached.days)   || SEED_WEEKS.reduce((n,w)=> n + (w.days?.length || 0), 0);
-    const foods = (cached && cached.foods)  ||
-      ((VEGE_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
-       (DAL_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0) +
-       (FRUIT_LIST?.reduce((n,s)=> n + s.items.length, 0) || 0));
-    const elW = $('#lsWeeks'), elD = $('#lsDays'), elF = $('#lsFoods');
-    if(elW) elW.textContent = weeks;
-    if(elD) elD.textContent = days;
-    if(elF) elF.textContent = foods + '+';
-  } catch(e){}
 })();
 
 (function initLogin(){
