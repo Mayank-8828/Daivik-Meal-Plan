@@ -1150,3 +1150,26 @@ input.time-inline-edit{
 /* Dark theme */
 [data-theme="dark"] .recipe-card{background:var(--cream-2)}
 [data-theme="dark"] .recipe-card-photo.no-photo{background:rgba(255,255,255,.05)}
+
+/* ============================================================
+   AI SUMMARY — Share modal
+   ============================================================ */
+.share-header-row{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;
+}
+.share-header-row p{
+  flex:1;font-size:13px;color:var(--ink-soft);margin:0;
+}
+.ai-summary-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 13px;border-radius:20px;border:none;cursor:pointer;
+  font-size:13px;font-weight:600;
+  background:linear-gradient(135deg,#7c6ef7 0%,#a78bfa 100%);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(124,110,247,.35);
+  transition:opacity .15s, transform .1s;
+  white-space:nowrap;
+}
+.ai-summary-btn:hover{opacity:.9}
+.ai-summary-btn:active{transform:scale(.96)}
+.ai-summary-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}

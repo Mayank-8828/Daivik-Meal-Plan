@@ -519,8 +519,11 @@ if ('serviceWorker' in navigator) {
       <h3>Share with dietician</h3>
       <button class="x-btn" id="shareClose">✕</button>
     </div>
-    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 10px">Generates a clean summary of the last 7 days. Choose your format:</p>
-    <textarea id="shareText" rows="14" readonly style="width:100%;font:inherit;font-size:12px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);white-space:pre-wrap"></textarea>
+    <div class="share-header-row">
+      <p style="flex:1;font-size:13px;color:var(--ink-soft);margin:0">Last 7 days · choose your format</p>
+      <button class="ai-summary-btn" id="aiSummaryBtn" title="Let AI write a friendly WhatsApp message from your data">✨ AI Summary</button>
+    </div>
+    <textarea id="shareText" rows="14" style="width:100%;font:inherit;font-size:12px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);white-space:pre-wrap"></textarea>
     <button class="btn-primary" id="copyShare">📋 Copy to clipboard</button>
     <button class="btn-primary btn-secondary" id="whatsappShare">💬 Open WhatsApp</button>
     <button class="btn-primary btn-secondary" id="emailShare">✉️ Email</button>
@@ -2929,6 +2932,38 @@ $('#emailShare').addEventListener('click', ()=>{
   const subj = encodeURIComponent("Daivik's Diet Log — last 7 days");
   const body = encodeURIComponent($('#shareText').value);
   window.location.href = `mailto:?subject=${subj}&body=${body}`;
+});
+
+/* ============================================================
+   AI SUMMARY (Gemini 1.5 Flash via /api/ai)
+   ============================================================ */
+$('#aiSummaryBtn').addEventListener('click', async ()=>{
+  const btn = $('#aiSummaryBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Writing…';
+  const originalText = $('#shareText').value;
+  try{
+    const report = buildShareReport();
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({report})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    $('#shareText').value = data.text;
+    toast('✨ AI summary ready — review before sending');
+  }catch(e){
+    console.error('AI summary error', e);
+    $('#shareText').value = originalText; // restore original on failure
+    const msg = e.message?.includes('GEMINI_API_KEY')
+      ? 'AI not set up — add GEMINI_API_KEY in Vercel'
+      : 'AI unavailable — check connection';
+    toast(msg, 3500);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '✨ AI Summary';
+  }
 });
 
 /* ============================================================
