@@ -401,8 +401,8 @@ if ('serviceWorker' in navigator) {
     <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px">AI extracts real ingredients from the meal plan. Check off as you shop.</p>
     <div class="shop-controls">
       <select id="shopWeekSelect" class="week-select" style="flex:1"></select>
-      <button class="section-action ai-summary-btn" id="shopGenBtn" style="white-space:nowrap">✨ Generate</button>
-      <button class="section-action" id="shopClearBtn" style="white-space:nowrap;color:var(--berry)">✕ Clear</button>
+      <button type="button" class="section-action ai-summary-btn" id="shopGenBtn" style="white-space:nowrap">✨ Generate</button>
+      <button type="button" class="section-action" id="shopClearBtn" style="white-space:nowrap;color:var(--berry)">✕ Clear</button>
     </div>
     <div id="shopList"></div>
   </section>
@@ -3353,8 +3353,10 @@ function renderShoppingList(){
   });
 }
 
-$('#shopGenBtn').addEventListener('click', async ()=>{
-  const weekId = $('#shopWeekSelect').value;
+$('#shopGenBtn').addEventListener('click', async (e)=>{
+  e.preventDefault(); e.stopPropagation();
+  const sel = $('#shopWeekSelect');
+  const weekId = sel.value;
   if(!weekId){ toast('Select a week first'); return; }
   const week = state.weeks.find(w=>w.id===weekId);
   if(!week){ toast('Week not found'); return; }
@@ -3367,6 +3369,7 @@ $('#shopGenBtn').addEventListener('click', async ()=>{
   const btn = $('#shopGenBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Generating…';
+  sel.disabled = true;   // lock select so taps don't open it during fetch
 
   try {
     const res = await fetch('/api/shopping', {
@@ -3376,16 +3379,23 @@ $('#shopGenBtn').addEventListener('click', async ()=>{
     });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
+    if(!Array.isArray(data.items) || data.items.length === 0){
+      toast('AI returned no items — try a different week', 3500);
+      return;
+    }
     state.shoppingList = {weekId, items: data.items};
     saveState();
     renderShoppingList();
     toast(`🛒 ${data.items.length} items ready — check off as you shop`);
   } catch(e){
     console.error('Shopping list AI error', e);
-    toast('Could not generate list — check connection or API key', 3500);
+    // Show the actual error so users can report it
+    const msg = e.message?.length > 80 ? e.message.slice(0,80)+'…' : e.message;
+    toast(`❌ ${msg}`, 4000);
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ Generate';
+    sel.disabled = false;
   }
 });
 

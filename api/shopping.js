@@ -2,14 +2,16 @@
    Takes an array of baby meal names and returns a de-duplicated,
    categorised grocery shopping list powered by Gemini 1.5 Flash.
 
+   Uses responseMimeType:"application/json" so Gemini outputs clean JSON
+   with no markdown fences — no regex parsing needed.
+
    Environment variable (shared with api/ai.js):
      GEMINI_API_KEY  — free key from https://aistudio.google.com/app/apikey
 
    POST body: { meals: string[] }
    Response:  { items: [{name, category}] }  |  { error: string }
 
-   Categories returned:
-     vege  · fruit  · dal  · grain  · dairy  · spice  · other
+   Categories: vege · fruit · dal · grain · dairy · spice · other
 */
 
 const GEMINI_URL =
@@ -33,11 +35,26 @@ Rules:
 - Skip generic placeholders like "Any vege from Section", "Any fruit", breastmilk, water.
 - De-duplicate: list each item only once even if it appears in multiple meals.
 - Use clean, short names (e.g. "Moong Dal" not "Moong dal (no chilka) with hing & haldi").
-- Extract ingredients hidden in compound names: "Ragi porridge with elaichi" → Ragi (grain) + Elaichi (spice).
-- Return ONLY valid JSON with no markdown fences, no explanation.
+- Extract ingredients hidden in compound names: "Ragi porridge with elaichi" → Ragi (grain) + Elaichi (spice).`;
 
-Output format exactly:
-{"items":[{"name":"Ragi","category":"grain"},{"name":"Elaichi","category":"spice"}]}`;
+// JSON schema that Gemini will strictly follow
+const RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name:     { type: 'string' },
+          category: { type: 'string', enum: ['vege','fruit','dal','grain','dairy','spice','other'] }
+        },
+        required: ['name', 'category']
+      }
+    }
+  },
+  required: ['items']
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -54,8 +71,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
   }
 
-  // Build a clean, de-duplicated meal list before sending to AI
+  // De-duplicate and filter trivially empty entries before sending to AI
   const uniqueMeals = [...new Set(meals.filter(m => m && m.trim().length > 2))];
+  if (!uniqueMeals.length) {
+    return res.status(200).json({ items: [] });
+  }
 
   try {
     const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
@@ -72,9 +92,11 @@ export default async function handler(req, res) {
           }
         ],
         generationConfig: {
-          temperature: 0.1,   // low temp → consistent, structured output
-          maxOutputTokens: 1200,
-          topP: 0.9
+          temperature: 0.1,
+          maxOutputTokens: 1500,
+          topP: 0.9,
+          responseMimeType: 'application/json',  // forces clean JSON — no markdown fences
+          responseSchema: RESPONSE_SCHEMA         // strict shape guarantee
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
@@ -88,36 +110,40 @@ export default async function handler(req, res) {
     if (!geminiRes.ok) {
       const errBody = await geminiRes.text();
       console.error('Gemini error', geminiRes.status, errBody);
-      return res.status(502).json({ error: `Gemini API error ${geminiRes.status}` });
+      return res.status(502).json({ error: `Gemini API error ${geminiRes.status}: ${errBody.slice(0, 200)}` });
     }
 
     const geminiData = await geminiRes.json();
     const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!text) {
-      return res.status(502).json({ error: 'Empty response from Gemini' });
+      const finishReason = geminiData?.candidates?.[0]?.finishReason;
+      console.error('Empty Gemini response, finishReason:', finishReason, JSON.stringify(geminiData).slice(0, 500));
+      return res.status(502).json({ error: `Empty Gemini response (reason: ${finishReason || 'unknown'})` });
     }
 
-    // Extract JSON object from the response (Gemini sometimes wraps in ```json)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('No JSON found in Gemini response:', text);
-      return res.status(502).json({ error: 'Could not parse Gemini response as JSON' });
+    // With responseMimeType:"application/json" the text IS the JSON — parse directly
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('JSON.parse failed on:', text.slice(0, 300));
+      return res.status(502).json({ error: 'Gemini returned invalid JSON' });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed?.items)) {
-      return res.status(502).json({ error: 'Unexpected JSON shape from Gemini' });
+      console.error('Unexpected shape:', JSON.stringify(parsed).slice(0, 300));
+      return res.status(502).json({ error: 'Unexpected shape from Gemini' });
     }
 
-    // Sanitise categories — only allow known values
+    // Sanitise — only allow known categories
     const VALID_CATS = new Set(['vege', 'fruit', 'dal', 'grain', 'dairy', 'spice', 'other']);
     const items = parsed.items
       .filter(i => i.name && typeof i.name === 'string' && i.name.trim().length > 0)
       .map(i => ({
-        name: i.name.trim(),
+        name:     i.name.trim(),
         category: VALID_CATS.has(i.category) ? i.category : 'other',
-        checked: false
+        checked:  false
       }));
 
     return res.status(200).json({ items });
