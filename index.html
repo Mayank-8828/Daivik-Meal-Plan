@@ -398,10 +398,10 @@ if ('serviceWorker' in navigator) {
   <!-- SHOPPING LIST -->
   <section class="view" id="view-shop">
     <h3 class="section-title">Shopping <span class="marker">list</span></h3>
-    <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px">Auto-generated from a week's meals. Check off items as you shop.</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px">AI extracts real ingredients from the meal plan. Check off as you shop.</p>
     <div class="shop-controls">
       <select id="shopWeekSelect" class="week-select" style="flex:1"></select>
-      <button class="section-action" id="shopGenBtn" style="white-space:nowrap">⚡ Generate</button>
+      <button class="section-action ai-summary-btn" id="shopGenBtn" style="white-space:nowrap">✨ Generate</button>
       <button class="section-action" id="shopClearBtn" style="white-space:nowrap;color:var(--berry)">✕ Clear</button>
     </div>
     <div id="shopList"></div>
@@ -916,7 +916,7 @@ $$('#mainTabs .tab').forEach(t=>{
     $('#view-'+t.dataset.view).classList.add('active');
     if(t.dataset.view==='insights') renderCharts();
     if(t.dataset.view==='today') renderToday();
-    if(t.dataset.view==='shop') renderShoppingList();
+    if(t.dataset.view==='shop'){ renderShoppingWeekSelect(); renderShoppingList(); }
     window.scrollTo({top:0, behavior:'smooth'});
   });
 });
@@ -3296,60 +3296,34 @@ $('#editRecipeDelete').addEventListener('click', ()=>{
 /* ============================================================
    SHOPPING LIST
    ============================================================ */
-function inferCategory(name){
-  const n = name.toLowerCase();
-  if(VEGE_LIST.some(g=>g.items.some(i=>n.includes(i.toLowerCase())))) return 'vege';
-  if(DAL_LIST.some(g=>g.items.some(i=>n.includes(i.toLowerCase())))) return 'dal';
-  if(FRUIT_LIST.some(g=>g.items.some(i=>n.includes(i.toLowerCase())))) return 'fruit';
-  return 'other';
-}
-
-function generateShoppingList(weekId){
-  const week = state.weeks.find(w=>w.id===weekId);
-  if(!week) return [];
-  const seen = new Map();
-  week.days.forEach(d=> d.slots.forEach(s=>{
-    // Extract primary food name — strip "with ...", "&", "+"
-    const raw = s.food.split(/\bwith\b/i)[0].split(/\band\b/i)[0].split('+')[0].split('&')[0].trim();
-    // Each comma-separated ingredient too
-    const parts = raw.includes(',') ? raw.split(',').map(p=>p.trim()) : [raw];
-    parts.forEach(name=>{
-      if(!name || name.length < 2) return;
-      const key = name.toLowerCase();
-      if(!seen.has(key)) seen.set(key, {name, category: inferCategory(name), checked:false});
-    });
-  }));
-  return [...seen.values()];
-}
-
 function renderShoppingWeekSelect(){
   const sel = $('#shopWeekSelect');
   if(!sel) return;
-  const cur = sel.value;
   sel.innerHTML = state.weeks.map(w=>`<option value="${w.id}">${escapeHtml(w.name)}${w.dateLabel?' – '+escapeHtml(w.dateLabel):''}</option>`).join('');
   if(state.shoppingList?.weekId && state.weeks.find(w=>w.id===state.shoppingList.weekId)){
     sel.value = state.shoppingList.weekId;
   } else {
-    // default: upcoming week or last
-    const today = new Date();
     const coords = findTodayCoords();
     const upcomingWeek = coords.weekId || state.weeks[state.weeks.length-1]?.id;
     if(upcomingWeek) sel.value = upcomingWeek;
   }
 }
 
+const SHOP_CAT_LABELS = {
+  vege:'🥕 Vegetables', dal:'🫘 Dals & Pulses', fruit:'🍎 Fruits',
+  grain:'🌾 Grains & Cereals', dairy:'🥛 Dairy', spice:'🧂 Spices & Herbs', other:'🧴 Other'
+};
+
 function renderShoppingList(){
   const container = $('#shopList');
   if(!container) return;
   const items = state.shoppingList?.items || [];
   if(!items.length){
-    container.innerHTML = `<div class="empty" style="padding:32px 0"><div class="icon">🛒</div>Select a week above and tap ⚡ Generate to create your shopping list.</div>`;
+    container.innerHTML = `<div class="empty" style="padding:32px 0"><div class="icon">🛒</div><p>Select a week above and tap ✨ Generate to create your shopping list.</p></div>`;
     return;
   }
-  // Group by category
-  const groups = {vege:[], dal:[], fruit:[], other:[]};
+  const groups = {vege:[], fruit:[], dal:[], grain:[], dairy:[], spice:[], other:[]};
   items.forEach((item,i)=>{ (groups[item.category]||groups.other).push({...item, idx:i}); });
-  const catLabels = {vege:'🥕 Vegetables', dal:'🫘 Dals & Pulses', fruit:'🍎 Fruits', other:'🧴 Other'};
   const total = items.length;
   const checked = items.filter(x=>x.checked).length;
   container.innerHTML = `
@@ -3359,7 +3333,7 @@ function renderShoppingList(){
     </div>
     ${Object.entries(groups).filter(([,v])=>v.length).map(([cat,catItems])=>`
       <div class="shop-group">
-        <div class="shop-group-title">${catLabels[cat]}</div>
+        <div class="shop-group-title">${SHOP_CAT_LABELS[cat]}</div>
         ${catItems.map(item=>`
           <label class="shop-item ${item.checked?'checked':''}">
             <input type="checkbox" class="shop-check" data-idx="${item.idx}" ${item.checked?'checked':''} />
@@ -3379,14 +3353,40 @@ function renderShoppingList(){
   });
 }
 
-$('#shopGenBtn').addEventListener('click', ()=>{
+$('#shopGenBtn').addEventListener('click', async ()=>{
   const weekId = $('#shopWeekSelect').value;
   if(!weekId){ toast('Select a week first'); return; }
-  const items = generateShoppingList(weekId);
-  state.shoppingList = {weekId, items};
-  saveState();
-  renderShoppingList();
-  toast(`🛒 Generated ${items.length} items`);
+  const week = state.weeks.find(w=>w.id===weekId);
+  if(!week){ toast('Week not found'); return; }
+
+  // Collect all non-empty meal names from the week
+  const meals = [];
+  week.days.forEach(d=> d.slots.forEach(s=>{ if(s.food?.trim()) meals.push(s.food.trim()); }));
+  if(!meals.length){ toast('No meals in this week yet'); return; }
+
+  const btn = $('#shopGenBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  try {
+    const res = await fetch('/api/shopping', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({meals})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    state.shoppingList = {weekId, items: data.items};
+    saveState();
+    renderShoppingList();
+    toast(`🛒 ${data.items.length} items ready — check off as you shop`);
+  } catch(e){
+    console.error('Shopping list AI error', e);
+    toast('Could not generate list — check connection or API key', 3500);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate';
+  }
 });
 
 $('#shopClearBtn').addEventListener('click', ()=>{
