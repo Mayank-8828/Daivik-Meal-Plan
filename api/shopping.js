@@ -2,9 +2,6 @@
    Takes an array of baby meal names and returns a de-duplicated,
    categorised grocery shopping list powered by Gemini 1.5 Flash.
 
-   Uses responseMimeType:"application/json" so Gemini outputs clean JSON
-   with no markdown fences — no regex parsing needed.
-
    Environment variable (shared with api/ai.js):
      GEMINI_API_KEY  — free key from https://aistudio.google.com/app/apikey
 
@@ -35,26 +32,10 @@ Rules:
 - Skip generic placeholders like "Any vege from Section", "Any fruit", breastmilk, water.
 - De-duplicate: list each item only once even if it appears in multiple meals.
 - Use clean, short names (e.g. "Moong Dal" not "Moong dal (no chilka) with hing & haldi").
-- Extract ingredients hidden in compound names: "Ragi porridge with elaichi" → Ragi (grain) + Elaichi (spice).`;
+- Extract ingredients hidden in compound names: "Ragi porridge with elaichi" → Ragi (grain) + Elaichi (spice).
 
-// JSON schema that Gemini will strictly follow
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    items: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name:     { type: 'string' },
-          category: { type: 'string', enum: ['vege','fruit','dal','grain','dairy','spice','other'] }
-        },
-        required: ['name', 'category']
-      }
-    }
-  },
-  required: ['items']
-};
+Return ONLY a JSON object in this exact format, no extra text:
+{"items":[{"name":"Ragi","category":"grain"},{"name":"Elaichi","category":"spice"}]}`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -95,8 +76,7 @@ export default async function handler(req, res) {
           temperature: 0.1,
           maxOutputTokens: 1500,
           topP: 0.9,
-          responseMimeType: 'application/json',  // forces clean JSON — no markdown fences
-          responseSchema: RESPONSE_SCHEMA         // strict shape guarantee
+          responseMimeType: 'application/json'
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
@@ -122,13 +102,23 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: `Empty Gemini response (reason: ${finishReason || 'unknown'})` });
     }
 
-    // With responseMimeType:"application/json" the text IS the JSON — parse directly
+    // Parse JSON — responseMimeType:"application/json" means text IS the JSON,
+    // but fall back to regex extraction in case the model adds any surrounding text.
     let parsed;
     try {
       parsed = JSON.parse(text);
-    } catch (parseErr) {
-      console.error('JSON.parse failed on:', text.slice(0, 300));
-      return res.status(502).json({ error: 'Gemini returned invalid JSON' });
+    } catch (_) {
+      const match = text.match(/\{[\s\S]*"items"[\s\S]*\}/);
+      if (!match) {
+        console.error('No JSON found in Gemini response:', text.slice(0, 300));
+        return res.status(502).json({ error: 'Could not parse Gemini response as JSON' });
+      }
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch (parseErr) {
+        console.error('JSON.parse failed:', text.slice(0, 300));
+        return res.status(502).json({ error: 'Gemini returned malformed JSON' });
+      }
     }
 
     if (!Array.isArray(parsed?.items)) {
