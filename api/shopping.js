@@ -75,8 +75,7 @@ export default async function handler(req, res) {
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 1500,
-          topP: 0.9,
-          responseMimeType: 'application/json'
+          topP: 0.9
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
