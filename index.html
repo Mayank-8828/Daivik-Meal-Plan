@@ -2950,16 +2950,19 @@ $('#aiSummaryBtn').addEventListener('click', async ()=>{
       body: JSON.stringify({report})
     });
     const data = await res.json();
+    if(data.error === 'quota_exceeded') throw new Error('quota_exceeded');
+    if(data.error === 'model_not_found') throw new Error('model_not_found');
     if(data.error) throw new Error(data.error);
     $('#shareText').value = data.text;
     toast('✨ AI summary ready — review before sending');
   }catch(e){
     console.error('AI summary error', e);
-    $('#shareText').value = originalText; // restore original on failure
-    const msg = e.message?.includes('GEMINI_API_KEY')
-      ? 'AI not set up — add GEMINI_API_KEY in Vercel'
-      : 'AI unavailable — check connection';
-    toast(msg, 3500);
+    $('#shareText').value = originalText;
+    let msg = 'AI unavailable — check connection';
+    if(e.message === 'quota_exceeded')   msg = '⚠️ AI daily quota used up — resets tomorrow, or create a new key at aistudio.google.com';
+    if(e.message === 'model_not_found')  msg = '⚠️ API key issue — get a fresh key from aistudio.google.com/app/apikey';
+    if(e.message?.includes('GEMINI_API_KEY')) msg = 'AI not set up — add GEMINI_API_KEY in Vercel';
+    toast(msg, 5000);
   }finally{
     btn.disabled = false;
     btn.textContent = '✨ AI Summary';

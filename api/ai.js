@@ -72,6 +72,12 @@ export default async function handler(req, res) {
     if (!geminiRes.ok) {
       const errBody = await geminiRes.text();
       console.error('Gemini error', geminiRes.status, errBody);
+      if (geminiRes.status === 429) {
+        return res.status(429).json({ error: 'quota_exceeded' });
+      }
+      if (geminiRes.status === 404) {
+        return res.status(404).json({ error: 'model_not_found' });
+      }
       return res.status(502).json({ error: `Gemini API error ${geminiRes.status}` });
     }
 
