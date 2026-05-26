@@ -12,7 +12,7 @@
 */
 
 const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are a helpful assistant for parents introducing solid foods to a baby.
 

@@ -11,7 +11,7 @@
 */
 
 const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are helping parents of a 7-month-old baby (named Daivik) send a diet update to their dietician via WhatsApp.
 
