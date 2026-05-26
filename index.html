@@ -703,6 +703,9 @@ function defaultState(){
        holds an array of {item, section} objects. The Foods view merges these
        into the corresponding section of the seed list at render time. */
     customFoods: {vege:[], dal:[], fruit:[]},
+    /* Custom section names added by planners (stored separately from items so
+       empty sections are preserved and can be ordered/deleted independently). */
+    customSections: {vege:[], dal:[], fruit:[]},
     growth: [
       {date:'2026-03-23', weight:7.8, length:69, head:null, notes:'Initial measurements'}
     ],
@@ -724,8 +727,9 @@ function mergeWithDefaults(s){
     ...s,
     foods:        {...d.foods,        ...(s.foods||{})},
     flaggedFoods: {...d.flaggedFoods, ...(s.flaggedFoods||{})},
-    customFoods:  {...d.customFoods,  ...(s.customFoods||{})},
-    reminders:    {...d.reminders,    ...(s.reminders||{})},
+    customFoods:    {...d.customFoods,    ...(s.customFoods||{})},
+    customSections: {...d.customSections, ...(s.customSections||{})},
+    reminders:      {...d.reminders,      ...(s.reminders||{})},
     recipes:      Array.isArray(s.recipes) ? s.recipes : d.recipes,
     shoppingList: s.shoppingList ? {...d.shoppingList, ...s.shoppingList} : d.shoppingList
   };
@@ -1782,19 +1786,32 @@ function openRecipe(title, instructions){
    the picked section no longer exists). */
 function getFoodSectionsFor(cat){
   const seed = cat==='vege'?VEGE_LIST: cat==='dal'?DAL_LIST: FRUIT_LIST;
-  const customForCat = (state.customFoods?.[cat]) || [];
+  const customForCat   = (state.customFoods?.[cat])    || [];
+  const customSectionsForCat = (state.customSections?.[cat]) || [];
   const byKey = new Map();
+
+  // 1. Seed sections first (fixed order)
   seed.forEach(g=>{
-    byKey.set(g.section, {section:g.section, items:[...g.items], customItems:[]});
+    byKey.set(g.section, {section:g.section, items:[...g.items], customItems:[], isCustomSection:false});
   });
+
+  // 2. Planner-added sections (may be empty or hold items)
+  customSectionsForCat.forEach(secName=>{
+    if(!byKey.has(secName)){
+      byKey.set(secName, {section:secName, items:[], customItems:[], isCustomSection:true});
+    }
+  });
+
+  // 3. Distribute custom food items into their sections
   customForCat.forEach(c=>{
     const target = byKey.get(c.section) || (function(){
-      const tail = {section: c.section || 'Custom additions', items:[], customItems:[]};
+      const tail = {section: c.section || 'Custom additions', items:[], customItems:[], isCustomSection:true};
       byKey.set(tail.section, tail);
       return tail;
     })();
     target.customItems.push(c.item);
   });
+
   return [...byKey.values()];
 }
 
@@ -1804,18 +1821,38 @@ function renderFoods(){
     const root = $('#foods-'+cat);
     const sections = getFoodSectionsFor(cat);
     const seed = cat==='vege'?VEGE_LIST: cat==='dal'?DAL_LIST: FRUIT_LIST;
-    const sectionOptions = seed.map(g=>`<option value="${escapeHtml(g.section)}">${escapeHtml(g.section)}</option>`).join('');
+
+    // Build section <option> list: seed sections + custom sections + "➕ New section"
+    const customSectionsForCat = (state.customSections?.[cat]) || [];
+    const allSectionOpts = [
+      ...seed.map(g=>`<option value="${escapeHtml(g.section)}">${escapeHtml(g.section)}</option>`),
+      ...customSectionsForCat.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`),
+      `<option value="__new__" class="new-section-opt">➕ New section…</option>`
+    ].join('');
+
+    const placeholder = cat==='vege'?'vegetable': cat==='dal'?'dal/pulse':'fruit';
 
     root.innerHTML = `
       <div class="food-add-row" data-plan data-cat="${cat}">
-        <select class="food-add-section" aria-label="Section">${sectionOptions}</select>
-        <input class="food-add-input" type="text" placeholder="Add a new ${cat==='vege'?'vegetable':cat==='dal'?'dal/pulse':'fruit'}…" />
+        <select class="food-add-section" aria-label="Section">${allSectionOpts}</select>
+        <input class="food-add-input" type="text" placeholder="Add a new ${placeholder}…" />
         <button class="food-add-btn" type="button">+ Add</button>
       </div>
+      <!-- Inline "new section" form — hidden by default, shown when ➕ selected -->
+      <div class="new-section-row" data-plan style="display:none">
+        <input class="new-section-input" type="text" placeholder="Section name, e.g. Omega-3 rich" maxlength="60" />
+        <button class="food-add-btn new-section-confirm" type="button">✓ Create</button>
+        <button class="food-add-btn new-section-cancel" type="button" style="background:var(--cream-2);color:var(--ink)">✕</button>
+      </div>
       ${sections.map(g=>`
-        <div class="food-group">
-          <h4 class="food-group-title">${escapeHtml(g.section)}</h4>
-          <div class="food-group-sub">${g.items.length + g.customItems.length} items</div>
+        <div class="food-group" data-section="${escapeHtml(g.section)}" data-section-cat="${cat}" data-custom-section="${g.isCustomSection?'1':''}">
+          <div class="food-group-header">
+            <div>
+              <h4 class="food-group-title">${escapeHtml(g.section)}</h4>
+              <div class="food-group-sub">${g.items.length + g.customItems.length} items</div>
+            </div>
+            ${g.isCustomSection ? `<button class="rm-section-btn" data-plan data-rm-section title="Delete section">🗑</button>` : ''}
+          </div>
           <div class="food-grid">
             ${[
               ...g.items.map(item=>{
@@ -1840,26 +1877,98 @@ function renderFoods(){
       `).join('')}
     `;
 
+    // ── Section selector → show/hide new-section row ────────────────
+    const addRow    = root.querySelector('.food-add-row');
+    const newSecRow = root.querySelector('.new-section-row');
+    const secSel    = addRow?.querySelector('.food-add-section');
+
+    if(secSel){
+      secSel.addEventListener('change', ()=>{
+        if(secSel.value === '__new__'){
+          newSecRow.style.display = 'flex';
+          newSecRow.querySelector('.new-section-input').focus();
+        } else {
+          newSecRow.style.display = 'none';
+        }
+      });
+    }
+
+    // ── Create new section ───────────────────────────────────────────
+    if(newSecRow){
+      const doCreate = ()=>{
+        if(!__isPlanner()){ toast('Only planners can add sections'); return; }
+        const name = newSecRow.querySelector('.new-section-input').value.trim();
+        if(!name){ toast('Enter a section name'); return; }
+        // Duplicate check
+        const allExisting = [
+          ...(cat==='vege'?VEGE_LIST:cat==='dal'?DAL_LIST:FRUIT_LIST).map(g=>g.section.toLowerCase()),
+          ...(state.customSections?.[cat]||[]).map(s=>s.toLowerCase())
+        ];
+        if(allExisting.includes(name.toLowerCase())){ toast(`"${name}" already exists`); return; }
+        state.customSections ||= {vege:[],dal:[],fruit:[]};
+        state.customSections[cat] ||= [];
+        state.customSections[cat].push(name);
+        saveState();
+        renderFoods();
+        toast(`📂 Section "${name}" created`);
+        // After re-render, select the new section in the dropdown
+        setTimeout(()=>{
+          const sel = root.querySelector('.food-add-section');
+          if(sel) sel.value = name;
+        }, 50);
+      };
+      newSecRow.querySelector('.new-section-confirm').addEventListener('click', doCreate);
+      newSecRow.querySelector('.new-section-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doCreate(); });
+      newSecRow.querySelector('.new-section-cancel').addEventListener('click', ()=>{
+        newSecRow.style.display = 'none';
+        newSecRow.querySelector('.new-section-input').value = '';
+        if(secSel) secSel.value = secSel.options[0].value;
+      });
+    }
+
+    // ── Delete custom section ────────────────────────────────────────
+    root.querySelectorAll('[data-rm-section]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        if(!__isPlanner()) return;
+        const grp = btn.closest('.food-group');
+        const secName = grp.dataset.section;
+        const cat2 = grp.dataset.sectionCat;
+        // Check if any custom foods live in this section
+        const occupied = (state.customFoods?.[cat2]||[]).filter(f=>f.section===secName);
+        if(occupied.length){
+          if(!confirm(`"${secName}" still has ${occupied.length} food item${occupied.length>1?'s':''} in it. Delete the section and all its items?`)) return;
+          state.customFoods[cat2] = (state.customFoods[cat2]||[]).filter(f=>f.section!==secName);
+        } else {
+          if(!confirm(`Delete section "${secName}"?`)) return;
+        }
+        state.customSections[cat2] = (state.customSections[cat2]||[]).filter(s=>s!==secName);
+        saveState();
+        renderFoods();
+        toast('Section deleted');
+      });
+    });
+
     // Add-food row handler
-    const addRow = root.querySelector('.food-add-row');
     if(addRow){
       const input = addRow.querySelector('.food-add-input');
       const submit = ()=>{
         if(!__isPlanner()){ toast('Only Mom, Dad, or Dietician can add foods'); return; }
         const name = input.value.trim();
         if(!name) return;
-        const section = addRow.querySelector('.food-add-section').value;
-        const seedSection = seed.find(g=>g.section===section);
-        const exists =
-          (seedSection?.items || []).some(i=> i.toLowerCase()===name.toLowerCase()) ||
-          (state.customFoods?.[cat] || []).some(c=> c.item.toLowerCase()===name.toLowerCase());
-        if(exists){ toast(`"${name}" is already in the list`); return; }
+        const section = secSel?.value;
+        if(!section || section === '__new__'){ toast('Choose a section first'); return; }
+        // Check duplicates across seed + custom
+        const allItems = sections.flatMap(g=>[...g.items,...g.customItems]).map(i=>i.toLowerCase());
+        if(allItems.includes(name.toLowerCase())){ toast(`"${name}" is already in the list`); return; }
         state.customFoods ||= {vege:[], dal:[], fruit:[]};
         state.customFoods[cat] ||= [];
         state.customFoods[cat].push({item: name, section});
         saveState();
         renderFoods();
         toast(`✨ Added ${name}`);
+        // Restore the same section selection after re-render
+        setTimeout(()=>{ const s=root.querySelector('.food-add-section'); if(s) s.value=section; },50);
       };
       addRow.querySelector('.food-add-btn').addEventListener('click', submit);
       input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });

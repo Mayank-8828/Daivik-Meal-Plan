@@ -961,6 +961,37 @@ body[data-role="dietician"] #profilePhotoWrap { pointer-events:none; cursor:defa
   padding:8px 14px;border-radius:10px;cursor:pointer;
 }
 .food-add-row button:active{transform:scale(.97)}
+/* New-section inline form */
+.new-section-row{
+  display:flex;gap:8px;margin:4px 0 14px;align-items:stretch;flex-wrap:wrap;
+}
+.new-section-input{
+  flex:1;font:inherit;font-size:13px;
+  padding:8px 11px;border-radius:10px;
+  border:1.5px solid var(--olive);background:var(--paper);color:var(--ink);
+  min-width:0;outline:none;
+}
+.new-section-input:focus{box-shadow:0 0 0 3px rgba(91,110,61,.15)}
+/* Section group header with optional delete button */
+.food-group-header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  margin-bottom:8px;
+}
+.food-group-header h4.food-group-title{margin:0}
+.food-group-header .food-group-sub{margin:0}
+/* Override existing food-group-title/sub margin since they're now inside header */
+.food-group .food-group-title{ margin-bottom:0 }
+.rm-section-btn{
+  flex-shrink:0;background:none;border:none;
+  color:var(--ink-soft);font-size:15px;cursor:pointer;
+  padding:2px 6px;border-radius:6px;
+  transition:color .15s,background .15s;
+}
+.rm-section-btn:hover{color:var(--berry);background:var(--danger-bg)}
+body[data-role="family"] .rm-section-btn{ display:none !important }
+/* "➕ New section" option styling (best-effort — browser limited) */
+option.new-section-opt{ color:var(--olive);font-weight:700 }
+
 .food-item.custom{position:relative;border-style:dashed}
 .food-item.custom .rmf{
   appearance:none;background:transparent;border:none;
