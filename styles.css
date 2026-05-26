@@ -990,3 +990,132 @@ body[data-role="family"]    .food-item.custom .rmf { display:none !important; }
   color:var(--ink-soft);background:var(--cream-2);
   padding:4px 10px;border-radius:99px;border:1px solid var(--line);
 }
+
+/* ============================================================
+   APP-UPDATE BANNER (Feature 1)
+   ============================================================ */
+.update-banner{
+  position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;
+  background:var(--olive);color:#fff;
+  font-size:14px;font-weight:600;
+  box-shadow:0 -4px 20px rgba(0,0,0,.15);
+}
+.update-banner #updateNowBtn{
+  background:#fff;color:var(--olive);
+  border:none;border-radius:99px;
+  padding:7px 16px;font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;
+}
+.update-banner #updateNowBtn:active{transform:scale(.97)}
+[data-theme="dark"] .update-banner{background:#3A4D28}
+
+/* ============================================================
+   EDITABLE REMINDER TIMES (Feature 2)
+   ============================================================ */
+.reminder-time{
+  cursor:pointer;
+  border-bottom:1px dashed var(--olive-light);
+  transition:color .15s;
+}
+.reminder-time:hover{color:var(--olive)}
+[data-role="family"] .reminder-time,[data-role="dietician"] .reminder-time{
+  cursor:default;border-bottom:none;
+}
+input.time-inline-edit{
+  font:inherit;font-size:14px;font-weight:600;color:var(--ink);
+  background:var(--cream-2);
+  border:1.5px solid var(--olive);border-radius:8px;
+  padding:3px 8px;width:110px;outline:none;
+}
+
+/* ============================================================
+   SWIPE-TO-MARK-FED (Feature 3)
+   ============================================================ */
+.today-meal{
+  transition:transform .15s ease;
+  position:relative;overflow:hidden;
+}
+
+/* ============================================================
+   SHOPPING LIST (Feature 4)
+   ============================================================ */
+.shop-controls{
+  display:flex;align-items:center;gap:8px;margin-bottom:18px;
+}
+.shop-progress{margin-bottom:18px}
+.shop-progress-bar{
+  height:6px;border-radius:99px;
+  background:var(--line);overflow:hidden;margin-bottom:6px;
+}
+.shop-progress-fill{
+  height:100%;background:var(--olive);border-radius:99px;
+  transition:width .3s ease;
+}
+.shop-progress-label{
+  font-size:12px;color:var(--ink-soft);font-weight:600;text-align:right;
+}
+.shop-group{margin-bottom:20px}
+.shop-group-title{
+  font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-soft);margin:0 0 8px;
+}
+.shop-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--paper);
+  border:1px solid var(--line);border-radius:10px;margin-bottom:6px;
+  cursor:pointer;transition:.15s;
+  -webkit-user-select:none;user-select:none;
+}
+.shop-item:active{transform:scale(.99)}
+.shop-item input.shop-check{
+  width:18px;height:18px;accent-color:var(--olive);flex-shrink:0;cursor:pointer;
+}
+.shop-item-name{font-size:14px;font-weight:500;transition:color .15s}
+.shop-item.checked .shop-item-name{
+  text-decoration:line-through;color:var(--ink-soft);
+}
+.shop-item.checked{background:var(--cream-2);border-color:var(--line)}
+
+/* ============================================================
+   RECIPE LIBRARY (Feature 5)
+   ============================================================ */
+.recipe-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(155px, 1fr));
+  gap:12px;margin-top:4px;
+}
+.recipe-card{
+  background:var(--paper);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;cursor:pointer;
+  transition:transform .15s, box-shadow .15s;
+}
+.recipe-card:active{transform:scale(.97)}
+.recipe-card:hover{box-shadow:var(--shadow)}
+.recipe-card-photo{
+  width:100%;height:110px;object-fit:cover;display:block;
+}
+.recipe-card-photo.no-photo{
+  height:80px;display:flex;align-items:center;justify-content:center;
+  font-size:36px;background:var(--cream-2);
+}
+.recipe-card-body{padding:10px 12px 12px}
+.recipe-card-title{
+  font-size:13px;font-weight:700;line-height:1.3;
+  margin-bottom:5px;
+}
+.recipe-card-meta{
+  font-size:11px;color:var(--ink-soft);font-weight:500;
+  margin-top:4px;
+}
+.recipe-tag-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.recipe-tag{
+  font-size:10.5px;font-weight:600;letter-spacing:.03em;
+  background:var(--cream-2);color:var(--ink-soft);
+  padding:2px 7px;border-radius:99px;
+  border:1px solid var(--line);
+}
+/* Dark theme */
+[data-theme="dark"] .recipe-card{background:var(--cream-2)}
+[data-theme="dark"] .recipe-card-photo.no-photo{background:rgba(255,255,255,.05)}

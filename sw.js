@@ -20,7 +20,8 @@ const SHELL_URLS = [
   './guide-family.html',
   './manifest.webmanifest',
   './icon.svg',
-  './icon-maskable.svg'
+  './icon-maskable.svg',
+  './firebase-messaging-sw.js'
 ];
 
 self.addEventListener('install', event => {
@@ -44,6 +45,12 @@ self.addEventListener('activate', event => {
 function isFirebaseLike(url) {
   return /(firestore|firebaseio|firebaseapp|googleapis|gstatic\.com\/firebasejs|identitytoolkit|securetoken)/i.test(url);
 }
+
+/* Feature: app-update toast — when the main page calls postMessage({type:'SKIP_WAITING'}),
+   let the new SW take over immediately so the user gets a fresh load. */
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('fetch', event => {
   const req = event.request;

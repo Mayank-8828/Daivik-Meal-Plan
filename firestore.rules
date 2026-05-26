@@ -33,6 +33,13 @@ service cloud.firestore {
       allow write: if isWriter();
     }
 
+    // FCM push tokens — each signed-in user can update their own role's token list.
+    // The server-side /api/notify route uses Admin SDK which bypasses these rules.
+    match /fcm/tokens {
+      allow read:  if isReader();
+      allow write: if isReader(); // any signed-in role can register/update their token
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
