@@ -1075,6 +1075,13 @@ input.time-inline-edit{
 .shop-controls{
   display:flex;align-items:center;gap:8px;margin-bottom:6px;
 }
+.shop-week-select{
+  flex:1;min-width:0;
+  padding:8px 10px;border-radius:10px;
+  border:1px solid var(--line);background:var(--paper);
+  color:var(--ink);font-size:14px;font-family:inherit;
+  cursor:pointer;
+}
 /* Override size for Generate button in shop controls */
 #shopGenBtn.ai-summary-btn{
   padding:7px 14px;font-size:13px;border-radius:10px;
